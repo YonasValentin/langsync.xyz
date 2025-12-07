@@ -1,0 +1,29 @@
+{
+  "name": "@langsync/workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LangSync npm packages for Next.js translation management",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "test:tree-shake": "pnpm -r exec agadoo",
+    "test:exports": "pnpm -r exec publint",
+    "clean": "pnpm -r exec rm -rf dist"
+  },
+  "devDependencies": {
+    "pkgroll": "^2.5.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "publint": "^0.2.11",
+    "agadoo": "^3.0.0",
+    "@changesets/cli": "^2.27.10",
+    "@types/node": "^22.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
