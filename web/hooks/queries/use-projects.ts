@@ -111,13 +111,9 @@ async function getProjects(): Promise<ProjectWithStats[]> {
 async function getProject(id: string): Promise<ProjectExpanded | null> {
   if (!pb.authStore.isValid) return null;
 
-  try {
-    return await pb.collection(Collections.PROJECTS).getOne<ProjectExpanded>(id, {
-      expand: "user",
-    });
-  } catch {
-    return null;
-  }
+  return await pb.collection(Collections.PROJECTS).getOne<ProjectExpanded>(id, {
+    expand: "user",
+  });
 }
 
 async function createProject(data: CreateProjectInput): Promise<ProjectsRecord> {
@@ -138,7 +134,7 @@ async function createProject(data: CreateProjectInput): Promise<ProjectsRecord> 
       });
       if (subs.length > 0) planId = subs[0].plan as PlanId;
     } catch {
-      // Default to free
+      throw new Error("Unable to verify your subscription plan. Please try again.");
     }
 
     const limits = getPlanLimits(planId);

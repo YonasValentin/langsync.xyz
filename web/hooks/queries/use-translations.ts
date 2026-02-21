@@ -179,7 +179,11 @@ async function updateTranslation(
       language,
       description: `Updated ${language} translation`,
     });
-  } catch {
+  } catch (err) {
+    // Only create new if record not found (404); rethrow other errors
+    const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+    if (status !== 404) throw err;
+
     // Create new translation
     await pb.collection(Collections.TRANSLATIONS).create<TranslationsRecord>({
       translationKey: keyId,

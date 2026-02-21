@@ -49,21 +49,25 @@ export const env = {
 
   /** Stripe secret key (server-side only, required in cloud mode) */
   get STRIPE_SECRET_KEY(): string {
+    if (!this.isCloud) return "";
     return required("STRIPE_SECRET_KEY");
   },
 
   /** Stripe webhook signing secret (server-side only) */
   get STRIPE_WEBHOOK_SECRET(): string {
+    if (!this.isCloud) return "";
     return required("STRIPE_WEBHOOK_SECRET");
   },
 
   /** Stripe price ID for Pro plan */
   get STRIPE_PRICE_ID_PRO(): string {
+    if (!this.isCloud) return "";
     return required("STRIPE_PRICE_ID_PRO");
   },
 
   /** Stripe price ID for Team plan */
   get STRIPE_PRICE_ID_TEAM(): string {
+    if (!this.isCloud) return "";
     return required("STRIPE_PRICE_ID_TEAM");
   },
 

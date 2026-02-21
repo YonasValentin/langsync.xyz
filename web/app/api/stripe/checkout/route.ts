@@ -5,6 +5,8 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getAdminPb } from "@/lib/pocketbase-server";
+import { authenticateSession } from "@/lib/api/session-auth";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import type { PlanId } from "@/lib/pocketbase-types";
@@ -22,12 +24,19 @@ function getPriceId(plan: PlanId): string | null {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { plan, userId } = body as { plan: PlanId; userId: string };
+    // Authenticate user from session cookie
+    const auth = authenticateSession(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { userId } = auth;
 
-    if (!plan || !userId) {
+    const body = await request.json();
+    const { plan } = body as { plan: PlanId };
+
+    if (!plan) {
       return NextResponse.json(
-        { error: "Missing plan or userId" },
+        { error: "Missing plan" },
         { status: 400 }
       );
     }
@@ -51,12 +60,19 @@ export async function POST(request: Request) {
     try {
       const existingSubs = await pb
         .collection("subscriptions")
-        .getFullList({ filter: `user = "${userId}"` });
+        .getFullList({ filter: `user = "${escapeFilterValue(userId)}"` });
       if (existingSubs.length > 0 && existingSubs[0].stripeCustomerId) {
         customerId = existingSubs[0].stripeCustomerId;
       }
-    } catch {
-      // No existing subscription, that's fine
+    } catch (err) {
+      logger.error("Failed to check existing subscription before checkout", {
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return NextResponse.json(
+        { error: "Failed to create checkout session" },
+        { status: 500 }
+      );
     }
 
     const origin =

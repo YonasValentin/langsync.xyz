@@ -31,8 +31,9 @@ function isSessionValid(cookieValue: string): boolean {
     const parts = data.token.split(".");
     if (parts.length !== 3) return false;
 
-    // Check expiry from JWT payload (middle segment)
-    const payload = JSON.parse(atob(parts[1]));
+    // Check expiry from JWT payload (middle segment, base64url encoded)
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
     if (payload.exp && payload.exp * 1000 < Date.now()) {
       return false;
     }

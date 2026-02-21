@@ -54,7 +54,8 @@ export function checkRateLimit(
 
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
-  const key = ip;
+  const pathname = new URL(request.url).pathname;
+  const key = `${ip}:${pathname}`;
 
   let entry = store.get(key);
   if (!entry || now > entry.resetAt) {

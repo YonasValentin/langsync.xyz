@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getAdminPb } from "@/lib/pocketbase-server";
 import { checkRateLimit } from "@/lib/api/rate-limit";
+import { authenticateSession } from "@/lib/api/session-auth";
 import { isValidRecordId, escapeFilterValue } from "@/lib/api/sanitize";
 import { logger } from "@/lib/logger";
 
@@ -43,25 +44,11 @@ export async function POST(request: Request) {
     }
 
     // Authenticate using the pb_auth cookie
-    const cookieHeader = request.headers.get("cookie");
-    if (!cookieHeader) {
+    const auth = authenticateSession(request);
+    if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Extract pb_auth cookie
-    const pbAuthMatch = cookieHeader.match(/pb_auth=([^;]+)/);
-    if (!pbAuthMatch) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    let userId: string;
-    try {
-      const cookieData = JSON.parse(decodeURIComponent(pbAuthMatch[1]));
-      userId = cookieData.record?.id;
-      if (!userId) throw new Error("No user ID in cookie");
-    } catch {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
-    }
+    const userId = auth.userId;
 
     // Use admin PocketBase client for data operations
     const pb = await getAdminPb();
@@ -69,8 +56,16 @@ export async function POST(request: Request) {
     // Verify the user exists
     try {
       await pb.collection("users").getOne(userId);
-    } catch {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    } catch (err) {
+      const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+      if (status === 404) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      logger.error("Failed to verify user in AI translate", {
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     // Get the project and verify ownership

@@ -8,7 +8,7 @@ import PocketBase from "pocketbase";
 const POCKETBASE_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "";
 
 export async function GET() {
-  const checks: Record<string, "ok" | "error"> = {
+  const checks: Record<string, string> = {
     app: "ok",
     pocketbase: "error",
   };
@@ -18,11 +18,12 @@ export async function GET() {
     const pb = new PocketBase(POCKETBASE_URL);
     await pb.health.check();
     checks.pocketbase = "ok";
-  } catch {
+  } catch (err) {
     checks.pocketbase = "error";
+    checks.pocketbaseDetail = err instanceof Error ? err.message : String(err);
   }
 
-  const healthy = Object.values(checks).every((v) => v === "ok");
+  const healthy = checks.app === "ok" && checks.pocketbase === "ok";
 
   return NextResponse.json(
     {

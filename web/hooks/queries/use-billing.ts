@@ -76,12 +76,8 @@ async function getSubscription(): Promise<SubscriptionInfo> {
       hasStripeSubscription: !!sub.stripeSubscriptionId,
     };
   } catch {
-    return {
-      plan: "free",
-      status: "active",
-      cancelAtPeriodEnd: false,
-      hasStripeSubscription: false,
-    };
+    // Let React Query handle the error state rather than silently returning "free"
+    throw new Error("Failed to load subscription info. Please try again.");
   }
 }
 
@@ -120,13 +116,12 @@ async function getUsage(): Promise<UsageInfo> {
 }
 
 async function createCheckoutSession(plan: PlanId): Promise<string> {
-  const userId = pb.authStore.record?.id;
-  if (!userId) throw new Error("Not authenticated");
+  if (!pb.authStore.isValid) throw new Error("Not authenticated");
 
   const response = await fetch("/api/stripe/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan, userId }),
+    body: JSON.stringify({ plan }),
   });
 
   if (!response.ok) {
@@ -139,13 +134,11 @@ async function createCheckoutSession(plan: PlanId): Promise<string> {
 }
 
 async function createPortalSession(): Promise<string> {
-  const userId = pb.authStore.record?.id;
-  if (!userId) throw new Error("Not authenticated");
+  if (!pb.authStore.isValid) throw new Error("Not authenticated");
 
   const response = await fetch("/api/stripe/portal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId }),
   });
 
   if (!response.ok) {

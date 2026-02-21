@@ -56,7 +56,10 @@ export async function authenticateApiKey(
   let pb: PocketBase;
   try {
     pb = await getAdminPb();
-  } catch {
+  } catch (err) {
+    logger.error("Auth middleware: failed to get admin PocketBase client", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -121,10 +124,21 @@ export async function authenticateApiKey(
   let project: Record<string, unknown>;
   try {
     project = await pb.collection("projects").getOne(projectId);
-  } catch {
+  } catch (err) {
+    const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+    if (status === 404) {
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
+    }
+    logger.error("Failed to fetch project in auth middleware", {
+      projectId,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json(
-      { success: false, error: "Project not found" },
-      { status: 404 }
+      { success: false, error: "Internal server error" },
+      { status: 500 }
     );
   }
 
@@ -143,8 +157,11 @@ export async function authenticateApiKey(
   // Update lastUsedAt in the background (don't block the response)
   pb.collection("api_keys")
     .update(keyRecord.id, { lastUsedAt: new Date().toISOString() })
-    .catch(() => {
-      // Non-critical, silently ignore
+    .catch((err) => {
+      logger.warn("Failed to update API key lastUsedAt", {
+        keyId: keyRecord.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
 
   return { pb, userId, project };

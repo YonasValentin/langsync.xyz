@@ -89,11 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authData = await pb.collection("users").authRefresh();
         setUser(authData.record as UsersRecord);
         syncAuthCookie();
-      } catch {
-        // Token is invalid, clear auth
-        pb.authStore.clear();
-        setUser(null);
-        syncAuthCookie();
+      } catch (err) {
+        // Only clear auth for authentication errors (401/403), not transient failures
+        const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+        if (status === 401 || status === 403) {
+          pb.authStore.clear();
+          setUser(null);
+          syncAuthCookie();
+        }
+        // For network errors / 500s, keep existing session and retry next interval
       }
     }
   }, []);

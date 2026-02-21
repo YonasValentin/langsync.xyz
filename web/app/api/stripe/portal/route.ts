@@ -8,20 +8,18 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getAdminPb } from "@/lib/pocketbase-server";
+import { authenticateSession } from "@/lib/api/session-auth";
 import { logger } from "@/lib/logger";
 import { escapeFilterValue } from "@/lib/api/sanitize";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { userId } = body as { userId: string };
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Missing userId" },
-        { status: 400 }
-      );
+    // Authenticate user from session cookie
+    const auth = authenticateSession(request);
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { userId } = auth;
 
     const pb = await getAdminPb();
 

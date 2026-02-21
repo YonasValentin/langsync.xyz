@@ -95,7 +95,17 @@ export async function POST(request: Request) {
         const userId = session.metadata?.userId;
         const plan = (session.metadata?.plan || "pro") as PlanId;
 
-        if (!userId || !session.subscription) break;
+        if (!userId || !session.subscription) {
+          logger.error("checkout.session.completed missing required metadata", {
+            sessionId: session.id,
+            hasUserId: !!userId,
+            hasSubscription: !!session.subscription,
+          });
+          return NextResponse.json(
+            { error: "Missing required metadata" },
+            { status: 400 }
+          );
+        }
 
         const stripe = getStripe();
         const subscription = await stripe.subscriptions.retrieve(
@@ -126,7 +136,15 @@ export async function POST(request: Request) {
         const userId = subscription.metadata?.userId;
         const plan = (subscription.metadata?.plan || "pro") as PlanId;
 
-        if (!userId) break;
+        if (!userId) {
+          logger.error("customer.subscription.updated missing userId metadata", {
+            subscriptionId: subscription.id,
+          });
+          return NextResponse.json(
+            { error: "Missing required metadata" },
+            { status: 400 }
+          );
+        }
 
         const subItem = subscription.items.data[0];
         await upsertSubscription(userId, {
@@ -150,7 +168,15 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const userId = subscription.metadata?.userId;
 
-        if (!userId) break;
+        if (!userId) {
+          logger.error("customer.subscription.deleted missing userId metadata", {
+            subscriptionId: subscription.id,
+          });
+          return NextResponse.json(
+            { error: "Missing required metadata" },
+            { status: 400 }
+          );
+        }
 
         const pb = await getAdminPb();
         const existing = await pb.collection("subscriptions").getFullList({
@@ -176,6 +202,7 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     logger.error("Stripe webhook processing error", {
       eventType: event.type,
+      eventId: event.id,
       error: error instanceof Error ? error.message : String(error),
     });
     return NextResponse.json(
