@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   CommentsRecord,
   CommentExpanded,
@@ -395,7 +396,7 @@ async function getApprovals(
   const keys = await pb
     .collection(Collections.TRANSLATION_KEYS)
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: "id",
     });
 
@@ -512,7 +513,7 @@ async function getPendingApprovalCount(projectId: string): Promise<number> {
   const keys = await pb
     .collection(Collections.TRANSLATION_KEYS)
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: "id",
     });
 
@@ -572,7 +573,7 @@ async function getActivityTypes(projectId: string): Promise<string[]> {
   const activities = await pb
     .collection(Collections.ACTIVITY_LOGS)
     .getFullList<ActivityLogsRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: "type",
     });
 

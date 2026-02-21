@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   TranslationKeysRecord,
   TranslationVersionsRecord,
@@ -49,7 +50,7 @@ async function getVersionHistory(
   const keys = await pb
     .collection(Collections.TRANSLATION_KEYS)
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: "id",
     });
 
@@ -57,8 +58,8 @@ async function getVersionHistory(
   if (!keyIds.includes(keyId)) return [];
 
   // Build filter
-  const filters: string[] = [`translationKey = "${keyId}"`];
-  if (language) filters.push(`language = "${language}"`);
+  const filters: string[] = [`translationKey = "${escapeFilterValue(keyId)}"`];
+  if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
 
   // Get versions
   const versions = await pb
@@ -103,7 +104,7 @@ async function getVersionStats(
   const keys = await pb
     .collection(Collections.TRANSLATION_KEYS)
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: "id",
     });
 
@@ -117,7 +118,7 @@ async function getVersionStats(
   }
 
   // Build filter for versions
-  const keyFilters = keys.map((k) => `translationKey = "${k.id}"`).join(" || ");
+  const keyFilters = keys.map((k) => `translationKey = "${escapeFilterValue(k.id)}"`).join(" || ");
   let filter = `(${keyFilters})`;
   if (since) {
     filter += ` && created >= "${since.toISOString()}"`;

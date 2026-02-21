@@ -1,4 +1,5 @@
 import { pb } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   AiTranslationsRecord,
   AiTranslationExpanded,
@@ -51,7 +52,7 @@ export async function translateBatchWithAI(
         const result = await translateWithAI(projectId, keyId, targetLanguage);
         results.push(result);
       } catch (error) {
-        console.error(`Failed to translate key ${keyId} to ${targetLanguage}:`, error);
+        // Individual translation failures during batch are non-fatal; continue with remaining
       }
     }
   }
@@ -79,7 +80,7 @@ export async function acceptAiTranslation(
     const existing = await pb
       .collection("translations")
       .getFirstListItem<TranslationsRecord>(
-        `translationKey = "${aiTranslation.translationKey}" && language = "${aiTranslation.targetLanguage}"`
+        `translationKey = "${escapeFilterValue(aiTranslation.translationKey)}" && language = "${escapeFilterValue(aiTranslation.targetLanguage)}"`
       );
 
     await pb.collection("translations").update(existing.id, {
@@ -124,9 +125,10 @@ export async function getAiUsage(
   totalCost: number;
   translations: AiTranslationsRecord[];
 }> {
-  let filter = `project = "${projectId}"`;
-  if (startDate) filter += ` && created >= "${startDate}"`;
-  if (endDate) filter += ` && created <= "${endDate}"`;
+  let filter = `project = "${escapeFilterValue(projectId)}"`;
+  if (startDate) filter += ` && created >= "${escapeFilterValue(startDate)}"`;
+  if (endDate) filter += ` && created <= "${escapeFilterValue(endDate)}"`;
+
 
   const translations = await pb
     .collection("ai_translations")
@@ -151,7 +153,7 @@ export async function getRecentAiSuggestions(
   const translations = await pb
     .collection("ai_translations")
     .getList<AiTranslationExpanded>(1, limit, {
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       sort: "-created",
       expand: "translationKey",
     });

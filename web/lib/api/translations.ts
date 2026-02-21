@@ -1,4 +1,5 @@
 import { pb } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   TranslationKeysRecord,
   TranslationsRecord,
@@ -21,7 +22,7 @@ export async function getTranslationKeys(
   const keys = await pb
     .collection("translation_keys")
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       sort: "key",
     });
 
@@ -32,7 +33,7 @@ export async function getTranslationKeys(
   const translations = await pb
     .collection("translations")
     .getFullList<TranslationsRecord>({
-      filter: keyIds.map((id) => `translationKey = "${id}"`).join(" || "),
+      filter: keyIds.map((id) => `translationKey = "${escapeFilterValue(id)}"`).join(" || "),
     });
 
   // Group translations by key
@@ -133,7 +134,7 @@ export async function updateTranslation(
     existingTranslation = await pb
       .collection("translations")
       .getFirstListItem<TranslationsRecord>(
-        `translationKey = "${keyId}" && language = "${language}"`
+        `translationKey = "${escapeFilterValue(keyId)}" && language = "${escapeFilterValue(language)}"`
       );
     previousValue = existingTranslation.value;
   } catch {
@@ -195,7 +196,7 @@ export async function deleteTranslationKey(
   const translations = await pb
     .collection("translations")
     .getFullList<TranslationsRecord>({
-      filter: `translationKey = "${keyId}"`,
+      filter: `translationKey = "${escapeFilterValue(keyId)}"`,
     });
 
   for (const t of translations) {

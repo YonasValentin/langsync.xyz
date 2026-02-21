@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   ProjectsRecord,
   ProjectExpanded,
@@ -60,7 +61,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
 
   // Get all projects for the user
   const projects = await pb.collection(Collections.PROJECTS).getFullList<ProjectsRecord>({
-    filter: `user = "${userId}"`,
+    filter: `user = "${escapeFilterValue(userId)}"`,
     sort: "-created",
   });
 
@@ -69,7 +70,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
     projects.map(async (project) => {
       // Get key count
       const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKeysRecord>({
-        filter: `project = "${project.id}"`,
+        filter: `project = "${escapeFilterValue(project.id)}"`,
         fields: "id",
       });
 
@@ -84,7 +85,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
         if (keys.length > 0) {
           const keyIds = keys.map(k => k.id);
           const translations = await pb.collection(Collections.TRANSLATIONS).getFullList<TranslationsRecord>({
-            filter: keyIds.map(id => `translationKey = "${id}"`).join(" || "),
+            filter: keyIds.map(id => `translationKey = "${escapeFilterValue(id)}"`).join(" || "),
             fields: "id,value",
           });
 
