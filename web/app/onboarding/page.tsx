@@ -184,7 +184,7 @@ const translations = await langsync.getTranslations('en');`;
   const userName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-rose-50/30 to-amber-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50/30 to-stone-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
@@ -220,7 +220,7 @@ const translations = await langsync.getTranslations('en');`;
                       <div
                         className={`h-12 w-12 rounded-full flex items-center justify-center border-2 transition-all ${
                           isCompleted
-                            ? 'bg-green-500 border-green-500'
+                            ? 'bg-success border-success'
                             : isCurrent
                             ? 'bg-primary border-primary'
                             : 'bg-muted border-border'
@@ -247,7 +247,7 @@ const translations = await langsync.getTranslations('en');`;
                     {index < steps.length - 1 && (
                       <div
                         className={`h-0.5 flex-1 mx-4 transition-all ${
-                          isCompleted ? 'bg-green-500' : 'bg-border'
+                          isCompleted ? 'bg-success' : 'bg-border'
                         }`}
                       />
                     )}
@@ -263,7 +263,7 @@ const translations = await langsync.getTranslations('en');`;
               {/* Step 1: Welcome */}
               {currentStep === 1 && (
                 <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                  <div className="h-20 w-20 rounded-full gradient-primary flex items-center justify-center shadow-glow-primary">
                     <Rocket className="h-10 w-10 text-white" />
                   </div>
                   <div className="space-y-3">
@@ -277,15 +277,15 @@ const translations = await langsync.getTranslations('en');`;
                   </div>
 
                   <div className="grid sm:grid-cols-3 gap-4 w-full max-w-2xl pt-6">
-                    <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-900">
+                    <div className="p-4 rounded-lg bg-accent border border-primary/20">
                       <div className="text-3xl font-bold gradient-text">1 min</div>
                       <p className="text-sm text-muted-foreground mt-1">Create project</p>
                     </div>
-                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
+                    <div className="p-4 rounded-lg bg-accent border border-primary/20">
                       <div className="text-3xl font-bold gradient-text">2 min</div>
                       <p className="text-sm text-muted-foreground mt-1">Install SDK</p>
                     </div>
-                    <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+                    <div className="p-4 rounded-lg bg-accent border border-primary/20">
                       <div className="text-3xl font-bold gradient-text">Done!</div>
                       <p className="text-sm text-muted-foreground mt-1">Start shipping</p>
                     </div>
@@ -382,7 +382,7 @@ const translations = await langsync.getTranslations('en');`;
                   </div>
 
                   <div className="relative">
-                    <pre className="p-4 rounded-lg bg-slate-950 text-slate-50 overflow-x-auto text-sm">
+                    <pre className="p-4 rounded-lg bg-gray-950 text-gray-100 overflow-x-auto text-sm">
                       <code>{getInstallCode()}</code>
                     </pre>
                     <Button
@@ -431,7 +431,7 @@ const translations = await langsync.getTranslations('en');`;
               {/* Step 4: Complete */}
               {currentStep === 4 && (
                 <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-                  <div className="h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                  <div className="h-24 w-24 rounded-full gradient-primary flex items-center justify-center shadow-glow-primary">
                     <PartyPopper className="h-12 w-12 text-white" />
                   </div>
                   <div className="space-y-3">

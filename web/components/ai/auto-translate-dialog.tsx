@@ -114,7 +114,7 @@ export function AutoTranslateDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <Sparkles className="h-5 w-5 text-primary" />
             Auto-Translate Missing Keys
           </DialogTitle>
           <DialogDescription>
@@ -125,9 +125,9 @@ export function AutoTranslateDialog({
         <div className="space-y-4 py-4">
           {/* Error Alert */}
           {error && (
-            <Alert className="border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/10">
-              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <AlertDescription className="text-red-900 dark:text-red-100">
+            <Alert className="border-destructive/20 bg-destructive/5">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-foreground">
                 {error}
               </AlertDescription>
             </Alert>
@@ -135,9 +135,9 @@ export function AutoTranslateDialog({
 
           {/* Success Alert */}
           {success && (
-            <Alert className="border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/10">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-900 dark:text-green-100">
+            <Alert className="border-success/20 bg-success/5">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <AlertDescription className="text-foreground">
                 Translations completed successfully!
               </AlertDescription>
             </Alert>
@@ -202,29 +202,29 @@ export function AutoTranslateDialog({
 
               {/* Summary */}
               {selectedLanguages.size > 0 && (
-                <div className="bg-violet-50/50 dark:bg-violet-950/10 border border-violet-200 dark:border-violet-900 rounded-lg p-4 space-y-2">
+                <div className="bg-accent border border-primary/20 rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-violet-900 dark:text-violet-100 font-medium">
+                    <span className="text-accent-foreground font-medium">
                       Total translations to generate:
                     </span>
-                    <Badge className="bg-violet-600 dark:bg-violet-700">
+                    <Badge className="bg-primary">
                       {totalEmptyCount}
                     </Badge>
                   </div>
 
                   {estimatedCost !== undefined && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-violet-900 dark:text-violet-100 font-medium flex items-center gap-1">
+                      <span className="text-accent-foreground font-medium flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />
                         Estimated cost:
                       </span>
-                      <span className="font-mono text-violet-900 dark:text-violet-100">
+                      <span className="font-mono text-accent-foreground">
                         ${estimatedCost.toFixed(2)}
                       </span>
                     </div>
                   )}
 
-                  <p className="text-xs text-violet-800 dark:text-violet-200 pt-2 border-t border-violet-200 dark:border-violet-800">
+                  <p className="text-xs text-muted-foreground pt-2 border-t border-primary/20">
                     AI will use your project settings (tone, style guide, etc.) to generate contextually
                     appropriate translations.
                   </p>
@@ -243,7 +243,7 @@ export function AutoTranslateDialog({
             <Button
               onClick={handleConfirm}
               disabled={selectedLanguages.size === 0}
-              className="bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600"
+              className="bg-primary hover:bg-primary/90"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               Start Translation

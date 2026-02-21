@@ -3,63 +3,32 @@
  * Used by @langsync/client, @langsync/nextjs, @langsync/expo
  */
 
-import { NextResponse } from 'next/server';
-import PocketBase from 'pocketbase';
-
-const POCKETBASE_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || '';
+import { NextResponse } from "next/server";
+import { authenticateApiKey } from "@/lib/api/auth-middleware";
+import { checkRateLimit } from "@/lib/api/rate-limit";
+import { escapeFilterValue } from "@/lib/api/sanitize";
+import { logger } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ projectId: string }>;
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
+  const rateLimited = checkRateLimit(request);
+  if (rateLimited) return rateLimited;
+
   try {
     const { projectId } = await params;
 
-    // Validate API key from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, error: 'Missing or invalid authorization header' },
-        { status: 401 }
-      );
-    }
+    const authResult = await authenticateApiKey(request, projectId);
+    if (authResult instanceof NextResponse) return authResult;
 
-    const apiKey = authHeader.replace('Bearer ', '');
-
-    // Create PocketBase client
-    const pb = new PocketBase(POCKETBASE_URL);
-
-    // Find user by API key
-    const users = await pb.collection('users').getFullList({
-      filter: `apiKey = "${apiKey}"`,
-      limit: 1,
-    });
-
-    if (users.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid API key' },
-        { status: 401 }
-      );
-    }
-
-    const user = users[0];
-
-    // Get the project
-    const project = await pb.collection('projects').getOne(projectId);
-
-    // Verify ownership
-    if (project.user !== user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Project not found' },
-        { status: 404 }
-      );
-    }
+    const { pb } = authResult;
 
     // Get all translation keys for the project
-    const keys = await pb.collection('translation_keys').getFullList({
-      filter: `project = "${projectId}"`,
-      sort: 'key',
+    const keys = await pb.collection("translation_keys").getFullList({
+      filter: `project = "${escapeFilterValue(projectId)}"`,
+      sort: "key",
     });
 
     if (keys.length === 0) {
@@ -69,10 +38,12 @@ export async function GET(request: Request, { params }: RouteParams) {
       });
     }
 
-    // Get all translations for these keys
+    // Get all translations for these keys (IDs come from PocketBase, safe to use)
     const keyIds = keys.map((k) => k.id);
-    const translations = await pb.collection('translations').getFullList({
-      filter: keyIds.map((id) => `translationKey = "${id}"`).join(' || '),
+    const translations = await pb.collection("translations").getFullList({
+      filter: keyIds
+        .map((id) => `translationKey = "${escapeFilterValue(id)}"`)
+        .join(" || "),
     });
 
     // Group translations by key
@@ -84,7 +55,6 @@ export async function GET(request: Request, { params }: RouteParams) {
       translationsByKey[t.translationKey][t.language] = t.value;
     }
 
-    // Build response data
     const data = keys.map((key) => ({
       id: key.id,
       key: key.key,
@@ -100,10 +70,11 @@ export async function GET(request: Request, { params }: RouteParams) {
       data,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to get translations';
-    console.error('API v1 translations error:', error);
+    logger.error("API v1 translations error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Failed to get translations" },
       { status: 500 }
     );
   }

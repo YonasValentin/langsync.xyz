@@ -61,13 +61,13 @@ export function CommitDialog({
   const getStatusColor = (status: GitFileStatus['status']) => {
     switch (status) {
       case 'added':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-success';
       case 'modified':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-primary';
       case 'deleted':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-destructive';
       case 'renamed':
-        return 'text-purple-600 dark:text-purple-400';
+        return 'text-warning';
     }
   };
 
@@ -90,10 +90,10 @@ export function CommitDialog({
             <div className="flex items-center justify-between">
               <Label>Files Changed ({files.length})</Label>
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-green-600 dark:text-green-400">
+                <span className="text-success">
                   +{totalInsertions} insertions
                 </span>
-                <span className="text-red-600 dark:text-red-400">
+                <span className="text-destructive">
                   -{totalDeletions} deletions
                 </span>
               </div>
@@ -111,12 +111,12 @@ export function CommitDialog({
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       {file.insertions > 0 && (
-                        <span className="text-green-600 dark:text-green-400">
+                        <span className="text-success">
                           +{file.insertions}
                         </span>
                       )}
                       {file.deletions > 0 && (
-                        <span className="text-red-600 dark:text-red-400">
+                        <span className="text-destructive">
                           -{file.deletions}
                         </span>
                       )}
@@ -147,9 +147,9 @@ export function CommitDialog({
 
           {/* Success State */}
           {committed && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm text-green-900 dark:text-green-100">
+            <div className="flex items-center gap-2 p-3 bg-success/5 border border-success/20 rounded-lg">
+              <Check className="h-5 w-5 text-success" />
+              <span className="text-sm text-foreground">
                 Changes committed successfully!
               </span>
             </div>

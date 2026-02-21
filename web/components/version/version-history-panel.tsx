@@ -54,11 +54,11 @@ export function VersionHistoryPanel({
   const getChangeIcon = (changeType: VersionHistoryEntry['changeType']) => {
     switch (changeType) {
       case 'created':
-        return <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <Plus className="h-4 w-4 text-success" />;
       case 'updated':
-        return <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <Edit3 className="h-4 w-4 text-primary" />;
       case 'deleted':
-        return <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <Trash2 className="h-4 w-4 text-destructive" />;
     }
   };
 

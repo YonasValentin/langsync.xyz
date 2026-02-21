@@ -2,15 +2,6 @@ import PocketBase from "pocketbase";
 import type {
   TypedPocketBase,
   UsersRecord,
-  ProjectsRecord,
-  TranslationKeysRecord,
-  TranslationsRecord,
-  AiTranslationsRecord,
-  CommentsRecord,
-  ApprovalsRecord,
-  ActivityLogsRecord,
-  TranslationVersionsRecord,
-  TranslationMemoryRecord,
 } from "./pocketbase-types";
 
 // ============================================
@@ -43,6 +34,8 @@ export const collections = {
   activityLogs: () => pb.collection("activity_logs"),
   translationVersions: () => pb.collection("translation_versions"),
   translationMemory: () => pb.collection("translation_memory"),
+  apiKeys: () => pb.collection("api_keys"),
+  subscriptions: () => pb.collection("subscriptions"),
 };
 
 // ============================================
@@ -183,6 +176,8 @@ export type {
   ActivityLogsRecord,
   TranslationVersionsRecord,
   TranslationMemoryRecord,
+  ApiKeysRecord,
+  SubscriptionsRecord,
 } from "./pocketbase-types";
 
 // Also export commonly used helper types
@@ -197,6 +192,10 @@ export type {
   ApprovalStatus,
   ActivityType,
   ChangeType,
+  ApiKeysExpanded,
+  PlanId,
+  SubscriptionStatus,
+  SubscriptionsExpanded,
 } from "./pocketbase-types";
 
 // Export Collections constant

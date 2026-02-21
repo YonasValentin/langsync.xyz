@@ -135,6 +135,40 @@ export interface TranslationVersionsRecord extends BaseRecord {
   metadata?: Record<string, unknown>;
 }
 
+// API Keys
+export interface ApiKeysRecord extends BaseRecord {
+  user: string; // Relation to users
+  name: string;
+  key: string;
+  prefix: string;
+  project?: string; // Relation to projects (optional scope)
+  lastUsedAt?: string;
+  expiresAt?: string;
+  revoked: boolean;
+  revokedAt?: string;
+}
+
+// Subscriptions
+export type PlanId = "free" | "pro" | "team" | "enterprise";
+export type SubscriptionStatus =
+  | "active"
+  | "canceled"
+  | "past_due"
+  | "trialing"
+  | "incomplete";
+
+export interface SubscriptionsRecord extends BaseRecord {
+  user: string; // Relation to users
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  plan: PlanId;
+  status: SubscriptionStatus;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd: boolean;
+}
+
 // Translation Memory
 export interface TranslationMemoryRecord extends BaseRecord {
   project?: string; // Relation to projects (optional for global entries)
@@ -215,6 +249,19 @@ export interface TranslationMemoryExpanded extends TranslationMemoryRecord {
   };
 }
 
+export interface ApiKeysExpanded extends ApiKeysRecord {
+  expand?: {
+    user?: UsersRecord;
+    project?: ProjectsRecord;
+  };
+}
+
+export interface SubscriptionsExpanded extends SubscriptionsRecord {
+  expand?: {
+    user?: UsersRecord;
+  };
+}
+
 // ============================================
 // Typed PocketBase Interface
 // ============================================
@@ -230,6 +277,8 @@ export interface TypedPocketBase extends PocketBase {
   collection(idOrName: "activity_logs"): RecordService<ActivityLogsRecord>;
   collection(idOrName: "translation_versions"): RecordService<TranslationVersionsRecord>;
   collection(idOrName: "translation_memory"): RecordService<TranslationMemoryRecord>;
+  collection(idOrName: "api_keys"): RecordService<ApiKeysRecord>;
+  collection(idOrName: "subscriptions"): RecordService<SubscriptionsRecord>;
   // Generic fallback for any other collection
   collection(idOrName: string): RecordService;
 }
@@ -357,6 +406,8 @@ export const Collections = {
   ACTIVITY_LOGS: "activity_logs",
   TRANSLATION_VERSIONS: "translation_versions",
   TRANSLATION_MEMORY: "translation_memory",
+  API_KEYS: "api_keys",
+  SUBSCRIPTIONS: "subscriptions",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];

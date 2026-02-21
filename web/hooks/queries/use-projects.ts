@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
+import { getPlanLimits, isCloudMode } from "@/lib/plans";
 import type {
   ProjectsRecord,
   ProjectExpanded,
   TranslationKeysRecord,
   TranslationsRecord,
+  PlanId,
 } from "@/lib/pocketbase-types";
 
 // ============================================
@@ -60,7 +63,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
 
   // Get all projects for the user
   const projects = await pb.collection(Collections.PROJECTS).getFullList<ProjectsRecord>({
-    filter: `user = "${userId}"`,
+    filter: `user = "${escapeFilterValue(userId)}"`,
     sort: "-created",
   });
 
@@ -69,7 +72,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
     projects.map(async (project) => {
       // Get key count
       const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKeysRecord>({
-        filter: `project = "${project.id}"`,
+        filter: `project = "${escapeFilterValue(project.id)}"`,
         fields: "id",
       });
 
@@ -84,7 +87,7 @@ async function getProjects(): Promise<ProjectWithStats[]> {
         if (keys.length > 0) {
           const keyIds = keys.map(k => k.id);
           const translations = await pb.collection(Collections.TRANSLATIONS).getFullList<TranslationsRecord>({
-            filter: keyIds.map(id => `translationKey = "${id}"`).join(" || "),
+            filter: keyIds.map(id => `translationKey = "${escapeFilterValue(id)}"`).join(" || "),
             fields: "id,value",
           });
 
@@ -108,18 +111,39 @@ async function getProjects(): Promise<ProjectWithStats[]> {
 async function getProject(id: string): Promise<ProjectExpanded | null> {
   if (!pb.authStore.isValid) return null;
 
-  try {
-    return await pb.collection(Collections.PROJECTS).getOne<ProjectExpanded>(id, {
-      expand: "user",
-    });
-  } catch {
-    return null;
-  }
+  return await pb.collection(Collections.PROJECTS).getOne<ProjectExpanded>(id, {
+    expand: "user",
+  });
 }
 
 async function createProject(data: CreateProjectInput): Promise<ProjectsRecord> {
   const userId = pb.authStore.record?.id;
   if (!userId) throw new Error("Not authenticated");
+
+  // Check plan limits (enforced in cloud mode only)
+  if (isCloudMode()) {
+    const existing = await pb.collection(Collections.PROJECTS).getList(1, 1, {
+      filter: `user = "${escapeFilterValue(userId)}"`,
+    });
+
+    // Get user's subscription to determine plan
+    let planId: PlanId = "free";
+    try {
+      const subs = await pb.collection(Collections.SUBSCRIPTIONS).getFullList({
+        filter: `user = "${escapeFilterValue(userId)}"`,
+      });
+      if (subs.length > 0) planId = subs[0].plan as PlanId;
+    } catch {
+      throw new Error("Unable to verify your subscription plan. Please try again.");
+    }
+
+    const limits = getPlanLimits(planId);
+    if (existing.totalItems >= limits.maxProjects) {
+      throw new Error(
+        `You've reached the ${limits.maxProjects} project limit on the ${planId} plan. Upgrade to create more projects.`
+      );
+    }
+  }
 
   return await pb.collection(Collections.PROJECTS).create<ProjectsRecord>({
     user: userId,

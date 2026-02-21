@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   TranslationKeysRecord,
   TranslationsRecord,
@@ -54,7 +55,7 @@ async function getTranslationKeys(
   const keys = await pb
     .collection(Collections.TRANSLATION_KEYS)
     .getFullList<TranslationKeysRecord>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       sort: "key",
     });
 
@@ -65,7 +66,7 @@ async function getTranslationKeys(
   const translations = await pb
     .collection(Collections.TRANSLATIONS)
     .getFullList<TranslationsRecord>({
-      filter: keyIds.map((id) => `translationKey = "${id}"`).join(" || "),
+      filter: keyIds.map((id) => `translationKey = "${escapeFilterValue(id)}"`).join(" || "),
     });
 
   // Group translations by key
@@ -148,7 +149,7 @@ async function updateTranslation(
     const existing = await pb
       .collection(Collections.TRANSLATIONS)
       .getFirstListItem<TranslationsRecord>(
-        `translationKey = "${keyId}" && language = "${language}"`
+        `translationKey = "${escapeFilterValue(keyId)}" && language = "${escapeFilterValue(language)}"`
       );
 
     const oldValue = existing.value;
@@ -178,7 +179,11 @@ async function updateTranslation(
       language,
       description: `Updated ${language} translation`,
     });
-  } catch {
+  } catch (err) {
+    // Only create new if record not found (404); rethrow other errors
+    const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+    if (status !== 404) throw err;
+
     // Create new translation
     await pb.collection(Collections.TRANSLATIONS).create<TranslationsRecord>({
       translationKey: keyId,

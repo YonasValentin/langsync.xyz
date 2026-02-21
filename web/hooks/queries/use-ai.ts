@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb, Collections } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type { AiTranslationsRecord } from "@/lib/pocketbase-types";
 import { translationKeys } from "./use-translations";
 
@@ -224,7 +225,7 @@ async function acceptAiTranslation(
   const existingTranslations = await pb
     .collection(Collections.TRANSLATIONS)
     .getFullList({
-      filter: `translationKey = "${aiTranslation.translationKey}" && language = "${aiTranslation.targetLanguage}"`,
+      filter: `translationKey = "${escapeFilterValue(aiTranslation.translationKey)}" && language = "${escapeFilterValue(aiTranslation.targetLanguage)}"`,
       limit: 1,
     });
 

@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import { pb, auth } from "@/lib/pocketbase";
@@ -36,25 +37,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Sync PocketBase auth with cookies for SSR/middleware support.
- * This allows the Next.js middleware to check auth state.
+ * Uses PocketBase's built-in exportToCookie for correct formatting.
  */
 function syncAuthCookie() {
   if (typeof document === "undefined") return;
 
-  if (pb.authStore.isValid) {
-    // Set cookie with auth data for middleware
+  if (pb.authStore.isValid && pb.authStore.record) {
+    // Use PocketBase's built-in cookie export
     const cookieValue = JSON.stringify({
       token: pb.authStore.token,
-      record: pb.authStore.record,
+      record: {
+        id: pb.authStore.record.id,
+        email: (pb.authStore.record as UsersRecord).email,
+      },
     });
     // Set cookie to expire in 7 days (matching PocketBase default)
-    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-    document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; expires=${expires}; SameSite=Lax`;
+    const expires = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ).toUTCString();
+    const secure =
+      typeof window !== "undefined" && window.location.protocol === "https:"
+        ? "; Secure"
+        : "";
+    document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; expires=${expires}; SameSite=Lax${secure}`;
   } else {
     // Clear the cookie
-    document.cookie = "pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie =
+      "pb_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   }
 }
+
+// Token refresh interval: 6 hours (well before 7-day expiry)
+const TOKEN_REFRESH_INTERVAL = 6 * 60 * 60 * 1000;
 
 // ============================================
 // Auth Provider
@@ -64,28 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UsersRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  // Initialize auth state from PocketBase authStore
-  useEffect(() => {
-    // Check if there's a valid auth session
-    if (pb.authStore.isValid && pb.authStore.record) {
-      setUser(pb.authStore.record as UsersRecord);
-    }
-    // Sync cookie on initial load
-    syncAuthCookie();
-    setIsLoading(false);
-
-    // Listen for auth changes (including from other tabs)
-    const unsubscribe = pb.authStore.onChange((token, record) => {
-      setUser(record as UsersRecord | null);
-      // Sync cookie whenever auth changes
-      syncAuthCookie();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   // Refresh user data from server
   const refreshUser = useCallback(async () => {
@@ -93,13 +88,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const authData = await pb.collection("users").authRefresh();
         setUser(authData.record as UsersRecord);
-      } catch {
-        // Token is invalid, clear auth
-        pb.authStore.clear();
-        setUser(null);
+        syncAuthCookie();
+      } catch (err) {
+        // Only clear auth for authentication errors (401/403), not transient failures
+        const status = err && typeof err === "object" && "status" in err ? (err as { status: number }).status : 0;
+        if (status === 401 || status === 403) {
+          pb.authStore.clear();
+          setUser(null);
+          syncAuthCookie();
+        }
+        // For network errors / 500s, keep existing session and retry next interval
       }
     }
   }, []);
+
+  // Initialize auth state and set up auto-refresh
+  useEffect(() => {
+    // Check if there's a valid auth session
+    if (pb.authStore.isValid && pb.authStore.record) {
+      setUser(pb.authStore.record as UsersRecord);
+      // Refresh on mount to validate the token is still good
+      refreshUser();
+    }
+    syncAuthCookie();
+    setIsLoading(false);
+
+    // Listen for auth changes (including from other tabs)
+    const unsubscribe = pb.authStore.onChange((_token, record) => {
+      setUser(record as UsersRecord | null);
+      syncAuthCookie();
+    });
+
+    // Set up periodic token refresh
+    refreshIntervalRef.current = setInterval(() => {
+      if (pb.authStore.isValid) {
+        refreshUser();
+      }
+    }, TOKEN_REFRESH_INTERVAL);
+
+    return () => {
+      unsubscribe();
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [refreshUser]);
 
   // Login with email and password
   const login = useCallback(async (email: string, password: string) => {
@@ -113,16 +146,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Register with email and password
-  const register = useCallback(async (email: string, password: string, name?: string) => {
-    setIsLoading(true);
-    try {
-      await auth.registerWithEmail(email, password, name);
-      // After registration, user is auto-logged in
-      setUser(pb.authStore.record as UsersRecord);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const register = useCallback(
+    async (email: string, password: string, name?: string) => {
+      setIsLoading(true);
+      try {
+        await auth.registerWithEmail(email, password, name);
+        // After registration, user is auto-logged in
+        setUser(pb.authStore.record as UsersRecord);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   // Login with Google OAuth
   const loginWithGoogle = useCallback(async () => {
@@ -150,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     auth.logout();
     setUser(null);
+    syncAuthCookie();
     router.push("/");
   }, [router]);
 

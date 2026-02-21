@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User, Settings, FolderOpen } from 'lucide-react';
+import { LogOut, User, Settings, FolderOpen, Key, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
 export function UserMenu() {
@@ -65,6 +65,18 @@ export function UserMenu() {
           <Link href="/dashboard/projects" className="cursor-pointer">
             <FolderOpen className="mr-2 h-4 w-4" />
             <span>Projects</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/api-keys" className="cursor-pointer">
+            <Key className="mr-2 h-4 w-4" />
+            <span>API Keys</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/billing" className="cursor-pointer">
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Billing</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

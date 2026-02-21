@@ -1,4 +1,5 @@
 import { pb } from "@/lib/pocketbase";
+import { escapeFilterValue } from "@/lib/api/sanitize";
 import type {
   ProjectsRecord,
   ProjectExpanded,
@@ -18,7 +19,7 @@ export async function getProjects(): Promise<ProjectsRecord[]> {
   if (!userId) return [];
 
   return await pb.collection("projects").getFullList<ProjectsRecord>({
-    filter: `user = "${userId}"`,
+    filter: `user = "${escapeFilterValue(userId)}"`,
     sort: "-created",
   });
 }
@@ -85,13 +86,13 @@ export async function updateProject(
 export async function deleteProject(id: string): Promise<boolean> {
   // Delete all translation keys (which will cascade to translations)
   const keys = await pb.collection("translation_keys").getFullList<TranslationKeysRecord>({
-    filter: `project = "${id}"`,
+    filter: `project = "${escapeFilterValue(id)}"`,
   });
 
   for (const key of keys) {
     // Delete translations for this key
     const translations = await pb.collection("translations").getFullList<TranslationsRecord>({
-      filter: `translationKey = "${key.id}"`,
+      filter: `translationKey = "${escapeFilterValue(key.id)}"`,
     });
     for (const t of translations) {
       await pb.collection("translations").delete(t.id);
@@ -110,7 +111,7 @@ export async function deleteProject(id: string): Promise<boolean> {
  */
 export async function getProjectKeyCount(projectId: string): Promise<number> {
   const result = await pb.collection("translation_keys").getList<TranslationKeysRecord>(1, 1, {
-    filter: `project = "${projectId}"`,
+    filter: `project = "${escapeFilterValue(projectId)}"`,
   });
   return result.totalItems;
 }

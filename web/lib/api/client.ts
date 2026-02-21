@@ -4,6 +4,7 @@
  */
 
 import { pb, Collections } from '@/lib/pocketbase';
+import { escapeFilterValue } from '@/lib/api/sanitize';
 import type {
   ProjectsRecord,
   TranslationKeysRecord,
@@ -89,7 +90,7 @@ class LangSyncApiClient {
   // Translation Keys
   async getKeys(projectId: string): Promise<(TranslationKey & { translations: Record<string, string> })[]> {
     const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKey>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       sort: 'key',
     });
 
@@ -98,7 +99,7 @@ class LangSyncApiClient {
     if (keyIds.length === 0) return [];
 
     const translations = await pb.collection(Collections.TRANSLATIONS).getFullList<Translation>({
-      filter: keyIds.map(id => `translationKey = "${id}"`).join(' || '),
+      filter: keyIds.map(id => `translationKey = "${escapeFilterValue(id)}"`).join(' || '),
     });
 
     // Group translations by key
@@ -165,7 +166,7 @@ class LangSyncApiClient {
 
     // Find existing translation
     const existing = await pb.collection(Collections.TRANSLATIONS).getFullList<Translation>({
-      filter: `translationKey = "${keyId}" && language = "${language}"`,
+      filter: `translationKey = "${escapeFilterValue(keyId)}" && language = "${escapeFilterValue(language)}"`,
       limit: 1,
     });
 
@@ -289,9 +290,9 @@ class LangSyncApiClient {
   }
 
   async getAiUsage(projectId: string, startDate?: string, endDate?: string): Promise<{ totalTokens: number; totalCost: number; translations: AiTranslation[] }> {
-    let filter = `project = "${projectId}"`;
-    if (startDate) filter += ` && created >= "${startDate}"`;
-    if (endDate) filter += ` && created <= "${endDate}"`;
+    let filter = `project = "${escapeFilterValue(projectId)}"`;
+    if (startDate) filter += ` && created >= "${escapeFilterValue(startDate)}"`;
+    if (endDate) filter += ` && created <= "${escapeFilterValue(endDate)}"`;
 
     const translations = await pb.collection(Collections.AI_TRANSLATIONS).getFullList<AiTranslation>({
       filter,
@@ -306,9 +307,9 @@ class LangSyncApiClient {
 
   // Comments
   async getComments(projectId: string, keyId?: string, language?: string, resolved?: boolean): Promise<Comment[]> {
-    const filters: string[] = [`project = "${projectId}"`];
-    if (keyId) filters.push(`translationKey = "${keyId}"`);
-    if (language) filters.push(`language = "${language}"`);
+    const filters: string[] = [`project = "${escapeFilterValue(projectId)}"`];
+    if (keyId) filters.push(`translationKey = "${escapeFilterValue(keyId)}"`);
+    if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
     if (resolved !== undefined) filters.push(`resolved = ${resolved}`);
 
     return pb.collection(Collections.COMMENTS).getFullList<Comment>({
@@ -363,16 +364,16 @@ class LangSyncApiClient {
   async getApprovals(projectId: string, keyId?: string, language?: string, status?: string): Promise<Approval[]> {
     // Need to get keys first to filter by project
     const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKey>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
     });
 
     if (keys.length === 0) return [];
 
-    const keyFilters = keys.map(k => `translationKey = "${k.id}"`).join(' || ');
+    const keyFilters = keys.map(k => `translationKey = "${escapeFilterValue(k.id)}"`).join(' || ');
     const filters: string[] = [`(${keyFilters})`];
-    if (keyId) filters.push(`translationKey = "${keyId}"`);
-    if (language) filters.push(`language = "${language}"`);
-    if (status) filters.push(`status = "${status}"`);
+    if (keyId) filters.push(`translationKey = "${escapeFilterValue(keyId)}"`);
+    if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
+    if (status) filters.push(`status = "${escapeFilterValue(status)}"`);
 
     return pb.collection(Collections.APPROVALS).getFullList<Approval>({
       filter: filters.join(' && '),
@@ -421,10 +422,10 @@ class LangSyncApiClient {
 
   // Activity Logs
   async getActivityLogs(projectId: string, keyId?: string, type?: string, language?: string, limit = 50, offset = 0): Promise<ActivityLog[]> {
-    const filters: string[] = [`project = "${projectId}"`];
-    if (keyId) filters.push(`translationKey = "${keyId}"`);
-    if (type) filters.push(`type = "${type}"`);
-    if (language) filters.push(`language = "${language}"`);
+    const filters: string[] = [`project = "${escapeFilterValue(projectId)}"`];
+    if (keyId) filters.push(`translationKey = "${escapeFilterValue(keyId)}"`);
+    if (type) filters.push(`type = "${escapeFilterValue(type)}"`);
+    if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
 
     const result = await pb.collection(Collections.ACTIVITY_LOGS).getList<ActivityLog>(Math.floor(offset / limit) + 1, limit, {
       filter: filters.join(' && '),
@@ -437,7 +438,7 @@ class LangSyncApiClient {
 
   async getActivityTypes(projectId: string): Promise<string[]> {
     const activities = await pb.collection(Collections.ACTIVITY_LOGS).getFullList<ActivityLog>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
       fields: 'type',
     });
 
@@ -445,8 +446,8 @@ class LangSyncApiClient {
   }
 
   async getActivityStats(projectId: string, since?: string): Promise<{ total: number; byType: Record<string, number>; byUser: Record<string, number> }> {
-    let filter = `project = "${projectId}"`;
-    if (since) filter += ` && created >= "${since}"`;
+    let filter = `project = "${escapeFilterValue(projectId)}"`;
+    if (since) filter += ` && created >= "${escapeFilterValue(since)}"`;
 
     const activities = await pb.collection(Collections.ACTIVITY_LOGS).getFullList<ActivityLog>({
       filter,
@@ -468,16 +469,16 @@ class LangSyncApiClient {
   async getVersions(projectId: string, keyId?: string, language?: string, changeType?: string, limit = 50, offset = 0): Promise<TranslationVersion[]> {
     // Need to get keys first to filter by project
     const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKey>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
     });
 
     if (keys.length === 0) return [];
 
-    const keyFilters = keys.map(k => `translationKey = "${k.id}"`).join(' || ');
+    const keyFilters = keys.map(k => `translationKey = "${escapeFilterValue(k.id)}"`).join(' || ');
     const filters: string[] = [`(${keyFilters})`];
-    if (keyId) filters.push(`translationKey = "${keyId}"`);
-    if (language) filters.push(`language = "${language}"`);
-    if (changeType) filters.push(`changeType = "${changeType}"`);
+    if (keyId) filters.push(`translationKey = "${escapeFilterValue(keyId)}"`);
+    if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
+    if (changeType) filters.push(`changeType = "${escapeFilterValue(changeType)}"`);
 
     const result = await pb.collection(Collections.TRANSLATION_VERSIONS).getList<TranslationVersion>(Math.floor(offset / limit) + 1, limit, {
       filter: filters.join(' && '),
@@ -489,8 +490,8 @@ class LangSyncApiClient {
   }
 
   async getKeyVersionHistory(projectId: string, keyId: string, language?: string): Promise<TranslationVersion[]> {
-    const filters: string[] = [`translationKey = "${keyId}"`];
-    if (language) filters.push(`language = "${language}"`);
+    const filters: string[] = [`translationKey = "${escapeFilterValue(keyId)}"`];
+    if (language) filters.push(`language = "${escapeFilterValue(language)}"`);
 
     return pb.collection(Collections.TRANSLATION_VERSIONS).getFullList<TranslationVersion>({
       filter: filters.join(' && '),
@@ -511,14 +512,14 @@ class LangSyncApiClient {
   async getVersionStats(projectId: string, since?: string): Promise<{ total: number; byChangeType: Record<string, number>; byLanguage: Record<string, number> }> {
     // Need to get keys first to filter by project
     const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKey>({
-      filter: `project = "${projectId}"`,
+      filter: `project = "${escapeFilterValue(projectId)}"`,
     });
 
     if (keys.length === 0) return { total: 0, byChangeType: {}, byLanguage: {} };
 
-    const keyFilters = keys.map(k => `translationKey = "${k.id}"`).join(' || ');
+    const keyFilters = keys.map(k => `translationKey = "${escapeFilterValue(k.id)}"`).join(' || ');
     let filter = `(${keyFilters})`;
-    if (since) filter += ` && created >= "${since}"`;
+    if (since) filter += ` && created >= "${escapeFilterValue(since)}"`;
 
     const versions = await pb.collection(Collections.TRANSLATION_VERSIONS).getFullList<TranslationVersion>({
       filter,
@@ -538,9 +539,9 @@ class LangSyncApiClient {
   // Translation Memory
   async getTranslationMemory(projectId?: string, sourceLanguage?: string, targetLanguage?: string, limit = 50, offset = 0): Promise<TranslationMemory[]> {
     const filters: string[] = [];
-    if (projectId) filters.push(`project = "${projectId}"`);
-    if (sourceLanguage) filters.push(`sourceLanguage = "${sourceLanguage}"`);
-    if (targetLanguage) filters.push(`targetLanguage = "${targetLanguage}"`);
+    if (projectId) filters.push(`project = "${escapeFilterValue(projectId)}"`);
+    if (sourceLanguage) filters.push(`sourceLanguage = "${escapeFilterValue(sourceLanguage)}"`);
+    if (targetLanguage) filters.push(`targetLanguage = "${escapeFilterValue(targetLanguage)}"`);
 
     const result = await pb.collection(Collections.TRANSLATION_MEMORY).getList<TranslationMemory>(Math.floor(offset / limit) + 1, limit, {
       filter: filters.length > 0 ? filters.join(' && ') : '',
@@ -559,10 +560,10 @@ class LangSyncApiClient {
   }): Promise<TranslationMemory[]> {
     // For now, do a simple text search - in production you'd want fuzzy matching
     const filters: string[] = [
-      `sourceLanguage = "${data.sourceLanguage}"`,
-      `targetLanguage = "${data.targetLanguage}"`,
+      `sourceLanguage = "${escapeFilterValue(data.sourceLanguage)}"`,
+      `targetLanguage = "${escapeFilterValue(data.targetLanguage)}"`,
     ];
-    if (data.projectId) filters.push(`project = "${data.projectId}"`);
+    if (data.projectId) filters.push(`project = "${escapeFilterValue(data.projectId)}"`);
 
     return pb.collection(Collections.TRANSLATION_MEMORY).getFullList<TranslationMemory>({
       filter: filters.join(' && '),

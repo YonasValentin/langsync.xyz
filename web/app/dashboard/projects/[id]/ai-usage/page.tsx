@@ -130,9 +130,9 @@ export default function AIUsagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50/50 via-white to-rose-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50/50 via-white to-stone-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Link href={`/dashboard/projects/${projectId}`}>
@@ -142,7 +142,7 @@ export default function AIUsagePage() {
             </Link>
             <div>
               <h1 className="font-bold text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 AI Usage Statistics
               </h1>
               <p className="text-xs text-muted-foreground">{project.name}</p>
@@ -168,10 +168,10 @@ export default function AIUsagePage() {
         {/* Overview Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Translations */}
-          <Card className="border-violet-200 dark:border-violet-900">
+          <Card className="border-primary/20">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                <Sparkles className="h-4 w-4 text-primary" />
                 Total Translations
               </CardDescription>
             </CardHeader>
@@ -184,10 +184,10 @@ export default function AIUsagePage() {
           </Card>
 
           {/* Acceptance Rate */}
-          <Card className="border-green-200 dark:border-green-900">
+          <Card className="border-success/20">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <TrendingUp className="h-4 w-4 text-success" />
                 Acceptance Rate
               </CardDescription>
             </CardHeader>
@@ -200,10 +200,10 @@ export default function AIUsagePage() {
           </Card>
 
           {/* Total Cost */}
-          <Card className="border-blue-200 dark:border-blue-900">
+          <Card className="border-primary/20">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <DollarSign className="h-4 w-4 text-primary" />
                 Total Cost
               </CardDescription>
             </CardHeader>
@@ -334,7 +334,7 @@ export default function AIUsagePage() {
                         </TableCell>
                         <TableCell>
                           {translation.wasAccepted ? (
-                            <Badge className="bg-green-600 dark:bg-green-700">
+                            <Badge className="bg-success">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               Accepted
                             </Badge>
