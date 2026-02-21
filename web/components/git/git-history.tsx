@@ -103,13 +103,13 @@ export function GitHistory({ branch, limit = 50 }: GitHistoryProps) {
                   </span>
 
                   {commit.insertions > 0 && (
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="text-success">
                       +{commit.insertions}
                     </span>
                   )}
 
                   {commit.deletions > 0 && (
-                    <span className="text-red-600 dark:text-red-400">
+                    <span className="text-destructive">
                       -{commit.deletions}
                     </span>
                   )}

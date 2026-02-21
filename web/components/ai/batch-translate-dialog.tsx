@@ -193,9 +193,9 @@ export function BatchTranslateDialog({
           </div>
 
           {/* Cost Estimate */}
-          <div className="bg-violet-50/50 dark:bg-violet-950/10 border border-violet-200 dark:border-violet-900 rounded-lg p-4">
+          <div className="bg-accent border border-primary/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-violet-600 dark:text-violet-400 mt-0.5" />
+              <DollarSign className="h-5 w-5 text-primary mt-0.5" />
               <div className="flex-1">
                 <h4 className="font-semibold text-sm mb-1">Estimated Cost</h4>
                 <p className="text-2xl font-bold text-primary mb-2">
@@ -231,9 +231,9 @@ export function BatchTranslateDialog({
 
           {/* Success */}
           {status === 'completed' && (
-            <Alert className="border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/10">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-900 dark:text-green-100">
+            <Alert className="border-success/20 bg-success/5">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <AlertDescription className="text-foreground">
                 Successfully translated {completed} translations!
                 {!autoAccept && ' Review the suggestions in the editor.'}
               </AlertDescription>

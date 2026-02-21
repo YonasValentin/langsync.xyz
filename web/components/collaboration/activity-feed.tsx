@@ -32,26 +32,26 @@ export function ActivityFeed({ projectId, keyId, limit = 50 }: ActivityFeedProps
     switch (type) {
       case 'key_created':
       case 'project_created':
-        return <Plus className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <Plus className="h-4 w-4 text-success" />;
       case 'translation_updated':
       case 'key_updated':
       case 'project_updated':
-        return <Edit3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <Edit3 className="h-4 w-4 text-primary" />;
       case 'key_deleted':
-        return <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <Trash2 className="h-4 w-4 text-destructive" />;
       case 'comment_added':
-        return <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+        return <MessageSquare className="h-4 w-4 text-primary" />;
       case 'comment_resolved':
-        return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'translation_approved':
       case 'ai_translation_accepted':
-        return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'translation_rejected':
-        return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       case 'ai_translation_generated':
-        return <Plus className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+        return <Plus className="h-4 w-4 text-primary" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 

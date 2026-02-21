@@ -67,7 +67,7 @@ export function GitStatusIndicator({
           <div className="space-y-2">
             {status.ahead > 0 && (
               <div className="flex items-center gap-2 text-sm">
-                <ArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <ArrowUp className="h-4 w-4 text-success" />
                 <span>
                   {status.ahead} {status.ahead === 1 ? 'commit' : 'commits'} ahead
                 </span>
@@ -76,7 +76,7 @@ export function GitStatusIndicator({
 
             {status.behind > 0 && (
               <div className="flex items-center gap-2 text-sm">
-                <ArrowDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <ArrowDown className="h-4 w-4 text-primary" />
                 <span>
                   {status.behind} {status.behind === 1 ? 'commit' : 'commits'} behind
                 </span>
@@ -85,7 +85,7 @@ export function GitStatusIndicator({
 
             {status.ahead === 0 && status.behind === 0 && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <Check className="h-4 w-4 text-success" />
                 <span>Up to date with remote</span>
               </div>
             )}
