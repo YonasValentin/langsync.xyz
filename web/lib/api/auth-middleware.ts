@@ -1,25 +1,25 @@
 /**
- * Shared API key authentication for public v1 API routes.
+ * API key authentication middleware for public v1 API routes.
  *
- * Validates the Bearer token from the Authorization header, looks up the
- * associated user, and verifies project ownership — all in one call.
+ * Validates the Bearer token from the Authorization header against
+ * the api_keys collection, verifies the key is active and not expired,
+ * checks project ownership/scope, and updates lastUsedAt.
  */
 
 import { NextResponse } from "next/server";
-import PocketBase from "pocketbase";
+import type PocketBase from "pocketbase";
+import { getAdminPb } from "@/lib/pocketbase-server";
 import { isValidApiKey, isValidRecordId, escapeFilterValue } from "./sanitize";
 import { logger } from "@/lib/logger";
 
-const POCKETBASE_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "";
-
 interface AuthResult {
   pb: PocketBase;
-  user: Record<string, unknown>;
+  userId: string;
   project: Record<string, unknown>;
 }
 
 /**
- * Authenticate via API key and verify project ownership.
+ * Authenticate via API key and verify project access.
  * Returns a NextResponse on failure, or the resolved auth context on success.
  */
 export async function authenticateApiKey(
@@ -37,10 +37,10 @@ export async function authenticateApiKey(
 
   const apiKey = authHeader.slice("Bearer ".length);
 
-  // Validate API key format before using in filter
+  // Validate API key format
   if (!isValidApiKey(apiKey)) {
     return NextResponse.json(
-      { success: false, error: "Invalid API key" },
+      { success: false, error: "Invalid API key format" },
       { status: 401 }
     );
   }
@@ -53,24 +53,71 @@ export async function authenticateApiKey(
     );
   }
 
-  const pb = new PocketBase(POCKETBASE_URL);
+  let pb: PocketBase;
+  try {
+    pb = await getAdminPb();
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 
-  // Find user by API key (value is pre-validated to be alphanumeric, but escape anyway)
-  const users = await pb.collection("users").getFullList({
-    filter: `apiKey = "${escapeFilterValue(apiKey)}"`,
-    limit: 1,
-  });
+  // Look up the API key in the api_keys collection
+  let keyRecords;
+  try {
+    keyRecords = await pb.collection("api_keys").getFullList({
+      filter: `key = "${escapeFilterValue(apiKey)}"`,
+    });
+  } catch (err) {
+    logger.error("Failed to query api_keys", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 
-  if (users.length === 0) {
+  if (keyRecords.length === 0) {
     return NextResponse.json(
       { success: false, error: "Invalid API key" },
       { status: 401 }
     );
   }
 
-  const user = users[0];
+  const keyRecord = keyRecords[0];
 
-  // Get the project
+  // Check if key is revoked
+  if (keyRecord.revoked) {
+    return NextResponse.json(
+      { success: false, error: "API key has been revoked" },
+      { status: 401 }
+    );
+  }
+
+  // Check if key has expired
+  if (keyRecord.expiresAt) {
+    const expiresAt = new Date(keyRecord.expiresAt);
+    if (expiresAt < new Date()) {
+      return NextResponse.json(
+        { success: false, error: "API key has expired" },
+        { status: 401 }
+      );
+    }
+  }
+
+  const userId = keyRecord.user;
+
+  // Check project scope: if the key is scoped to a specific project, verify it matches
+  if (keyRecord.project && keyRecord.project !== projectId) {
+    return NextResponse.json(
+      { success: false, error: "API key does not have access to this project" },
+      { status: 403 }
+    );
+  }
+
+  // Get the project and verify ownership
   let project: Record<string, unknown>;
   try {
     project = await pb.collection("projects").getOne(projectId);
@@ -81,11 +128,11 @@ export async function authenticateApiKey(
     );
   }
 
-  // Verify ownership
-  if (project.user !== user.id) {
-    logger.warn("Project ownership mismatch", {
-      userId: user.id,
+  if (project.user !== userId) {
+    logger.warn("API key project ownership mismatch", {
+      userId,
       projectId,
+      keyId: keyRecord.id,
     });
     return NextResponse.json(
       { success: false, error: "Project not found" },
@@ -93,5 +140,12 @@ export async function authenticateApiKey(
     );
   }
 
-  return { pb, user, project };
+  // Update lastUsedAt in the background (don't block the response)
+  pb.collection("api_keys")
+    .update(keyRecord.id, { lastUsedAt: new Date().toISOString() })
+    .catch(() => {
+      // Non-critical, silently ignore
+    });
+
+  return { pb, userId, project };
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import PocketBase from "pocketbase";
+import { getAdminPb } from "@/lib/pocketbase-server";
 import { checkRateLimit } from "@/lib/api/rate-limit";
 import { isValidRecordId, escapeFilterValue } from "@/lib/api/sanitize";
 import { logger } from "@/lib/logger";
@@ -8,8 +8,6 @@ import { logger } from "@/lib/logger";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const POCKETBASE_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "";
 
 export async function POST(request: Request) {
   // Stricter rate limit for AI endpoint (costs money)
@@ -44,19 +42,42 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create PocketBase client and authenticate with cookie from request
-    const pb = new PocketBase(POCKETBASE_URL);
+    // Authenticate using the pb_auth cookie
     const cookieHeader = request.headers.get("cookie");
-    if (cookieHeader) {
-      pb.authStore.loadFromCookie(cookieHeader);
-    }
-
-    if (!pb.authStore.isValid) {
+    if (!cookieHeader) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get the project for context
+    // Extract pb_auth cookie
+    const pbAuthMatch = cookieHeader.match(/pb_auth=([^;]+)/);
+    if (!pbAuthMatch) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let userId: string;
+    try {
+      const cookieData = JSON.parse(decodeURIComponent(pbAuthMatch[1]));
+      userId = cookieData.record?.id;
+      if (!userId) throw new Error("No user ID in cookie");
+    } catch {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    // Use admin PocketBase client for data operations
+    const pb = await getAdminPb();
+
+    // Verify the user exists
+    try {
+      await pb.collection("users").getOne(userId);
+    } catch {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get the project and verify ownership
     const project = await pb.collection("projects").getOne(projectId);
+    if (project.user !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // Get the translation key and its source translation
     const translationKey = await pb
@@ -68,7 +89,6 @@ export async function POST(request: Request) {
       .collection("translations")
       .getFullList({
         filter: `translationKey = "${escapeFilterValue(keyId)}" && language = "${escapeFilterValue(project.defaultLanguage)}"`,
-        limit: 1,
       });
 
     if (sourceTranslations.length === 0) {

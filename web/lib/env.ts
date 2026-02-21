@@ -27,6 +27,16 @@ export const env = {
     "http://127.0.0.1:8090"
   ),
 
+  /** PocketBase superuser email (server-side only, for admin API access) */
+  get POCKETBASE_ADMIN_EMAIL(): string {
+    return required("POCKETBASE_ADMIN_EMAIL");
+  },
+
+  /** PocketBase superuser password (server-side only) */
+  get POCKETBASE_ADMIN_PASSWORD(): string {
+    return required("POCKETBASE_ADMIN_PASSWORD");
+  },
+
   /** OpenAI API key for AI translations (server-side only) */
   get OPENAI_API_KEY(): string {
     return required("OPENAI_API_KEY");

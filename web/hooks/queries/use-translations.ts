@@ -149,7 +149,7 @@ async function updateTranslation(
     const existing = await pb
       .collection(Collections.TRANSLATIONS)
       .getFirstListItem<TranslationsRecord>(
-        `translationKey = "${keyId}" && language = "${language}"`
+        `translationKey = "${escapeFilterValue(keyId)}" && language = "${escapeFilterValue(language)}"`
       );
 
     const oldValue = existing.value;

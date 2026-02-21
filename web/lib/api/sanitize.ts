@@ -26,10 +26,12 @@ export function isValidRecordId(id: string): boolean {
 }
 
 /**
- * Validate that a string looks like an API key (64 alphanumeric chars).
+ * Validate that a string looks like an API key.
+ * Accepts the prefixed format (lsk_ + 48 alphanumeric) or
+ * the legacy 64-char alphanumeric format for backward compatibility.
  */
 export function isValidApiKey(key: string): boolean {
-  return /^[a-zA-Z0-9]{64}$/.test(key);
+  return /^lsk_[a-zA-Z0-9]{48}$/.test(key) || /^[a-zA-Z0-9]{64}$/.test(key);
 }
 
 /**
