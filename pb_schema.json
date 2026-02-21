@@ -1469,6 +1469,166 @@
         "system": false
     },
     {
+        "id": "subscriptions_col",
+        "listRule": "@request.auth.id != '' && @request.auth.id = user",
+        "viewRule": "@request.auth.id != '' && @request.auth.id = user",
+        "createRule": null,
+        "updateRule": null,
+        "deleteRule": null,
+        "name": "subscriptions",
+        "type": "base",
+        "fields": [
+            {
+                "autogeneratePattern": "[a-z0-9]{15}",
+                "hidden": false,
+                "id": "text3208210256",
+                "max": 15,
+                "min": 15,
+                "name": "id",
+                "pattern": "^[a-z0-9]+$",
+                "presentable": false,
+                "primaryKey": true,
+                "required": true,
+                "system": true,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "autodate2990389176",
+                "name": "created",
+                "onCreate": true,
+                "onUpdate": false,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "hidden": false,
+                "id": "autodate3332085495",
+                "name": "updated",
+                "onCreate": true,
+                "onUpdate": true,
+                "presentable": false,
+                "system": false,
+                "type": "autodate"
+            },
+            {
+                "cascadeDelete": true,
+                "collectionId": "_pb_users_auth_",
+                "hidden": false,
+                "id": "relation_sub_user",
+                "maxSelect": 1,
+                "minSelect": 0,
+                "name": "user",
+                "presentable": false,
+                "required": true,
+                "system": false,
+                "type": "relation"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text_stripe_customer_id",
+                "max": 255,
+                "min": 0,
+                "name": "stripeCustomerId",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text_stripe_sub_id",
+                "max": 255,
+                "min": 0,
+                "name": "stripeSubscriptionId",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "autogeneratePattern": "",
+                "hidden": false,
+                "id": "text_stripe_price_id",
+                "max": 255,
+                "min": 0,
+                "name": "stripePriceId",
+                "pattern": "",
+                "presentable": false,
+                "primaryKey": false,
+                "required": false,
+                "system": false,
+                "type": "text"
+            },
+            {
+                "hidden": false,
+                "id": "select_plan",
+                "maxSelect": 1,
+                "name": "plan",
+                "presentable": true,
+                "required": true,
+                "system": false,
+                "type": "select",
+                "values": ["free", "pro", "team", "enterprise"]
+            },
+            {
+                "hidden": false,
+                "id": "select_status",
+                "maxSelect": 1,
+                "name": "status",
+                "presentable": false,
+                "required": true,
+                "system": false,
+                "type": "select",
+                "values": ["active", "canceled", "past_due", "trialing", "incomplete"]
+            },
+            {
+                "hidden": false,
+                "id": "date_period_start",
+                "max": "",
+                "min": "",
+                "name": "currentPeriodStart",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "date"
+            },
+            {
+                "hidden": false,
+                "id": "date_period_end",
+                "max": "",
+                "min": "",
+                "name": "currentPeriodEnd",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "date"
+            },
+            {
+                "hidden": false,
+                "id": "bool_cancel_at_end",
+                "name": "cancelAtPeriodEnd",
+                "presentable": false,
+                "required": false,
+                "system": false,
+                "type": "bool"
+            }
+        ],
+        "indexes": [
+            "CREATE UNIQUE INDEX `idx_subscriptions_user` ON `subscriptions` (`user`)",
+            "CREATE INDEX `idx_subscriptions_stripe_customer` ON `subscriptions` (`stripeCustomerId`)",
+            "CREATE INDEX `idx_subscriptions_stripe_sub` ON `subscriptions` (`stripeSubscriptionId`)"
+        ],
+        "system": false
+    },
+    {
         "id": "translation_memory_col",
         "listRule": "@request.auth.id != '' && (project = '' || @request.auth.id = project.user)",
         "viewRule": "@request.auth.id != '' && (project = '' || @request.auth.id = project.user)",

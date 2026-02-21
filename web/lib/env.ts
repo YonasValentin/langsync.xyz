@@ -42,6 +42,31 @@ export const env = {
     return required("OPENAI_API_KEY");
   },
 
+  /** Whether this is the managed cloud deployment (enables billing/limits) */
+  get isCloud(): boolean {
+    return process.env.NEXT_PUBLIC_LANGSYNC_CLOUD === "true";
+  },
+
+  /** Stripe secret key (server-side only, required in cloud mode) */
+  get STRIPE_SECRET_KEY(): string {
+    return required("STRIPE_SECRET_KEY");
+  },
+
+  /** Stripe webhook signing secret (server-side only) */
+  get STRIPE_WEBHOOK_SECRET(): string {
+    return required("STRIPE_WEBHOOK_SECRET");
+  },
+
+  /** Stripe price ID for Pro plan */
+  get STRIPE_PRICE_ID_PRO(): string {
+    return required("STRIPE_PRICE_ID_PRO");
+  },
+
+  /** Stripe price ID for Team plan */
+  get STRIPE_PRICE_ID_TEAM(): string {
+    return required("STRIPE_PRICE_ID_TEAM");
+  },
+
   /** Current environment */
   NODE_ENV: optional("NODE_ENV", "development"),
 

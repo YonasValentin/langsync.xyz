@@ -35,6 +35,7 @@ export const collections = {
   translationVersions: () => pb.collection("translation_versions"),
   translationMemory: () => pb.collection("translation_memory"),
   apiKeys: () => pb.collection("api_keys"),
+  subscriptions: () => pb.collection("subscriptions"),
 };
 
 // ============================================
@@ -176,6 +177,7 @@ export type {
   TranslationVersionsRecord,
   TranslationMemoryRecord,
   ApiKeysRecord,
+  SubscriptionsRecord,
 } from "./pocketbase-types";
 
 // Also export commonly used helper types
@@ -191,6 +193,9 @@ export type {
   ActivityType,
   ChangeType,
   ApiKeysExpanded,
+  PlanId,
+  SubscriptionStatus,
+  SubscriptionsExpanded,
 } from "./pocketbase-types";
 
 // Export Collections constant
