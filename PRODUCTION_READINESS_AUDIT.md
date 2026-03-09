@@ -47,6 +47,22 @@
 | 14 | Ingen pre-commit hooks | Mangler `husky` + `lint-staged` |
 | 15 | Ingen React testing utils | Har `vitest` men mangler `@testing-library/react` |
 
+### EKSTRA Issues (fra dybdegående analyse)
+
+| # | Issue | Detalje |
+|---|-------|---------|
+| 16 | **Stripe checkout → localhost fallback** | `app/api/stripe/checkout/route.ts:79` falder tilbage til `http://localhost:3000` hvis `Origin` header mangler. Sikkerhedsrisiko + broken payment flows. Brug `NEXT_PUBLIC_APP_URL` env var. |
+| 17 | **PocketBase admin auth: lazy validation** | `lib/pocketbase-server.ts` — admin credentials valideres først ved første API-kald. App starter "succesfuldt" men crasher på første request. |
+| 18 | **Docker kører som root** | Dockerfile mangler `USER nextjs` — kører container som root user. |
+| 19 | **PocketBase `:latest` tag** | `docker-compose.yml` bruger `ghcr.io/muchobien/pocketbase:latest` — bør pinnes til specifik version. |
+| 20 | **Ingen `.dockerignore`** | Docker context inkluderer `.git`, `node_modules`, `.env.local` osv. |
+| 21 | **Ingen CSRF-beskyttelse** | Stoler kun på `SameSite=Lax` cookies — ingen CSRF tokens. |
+| 22 | **Stripe webhook mangler idempotency** | Duplikerede webhook events kan forårsage double-charge. Ingen event deduplication. |
+| 23 | **N+1 query problem** | `hooks/queries/use-projects.ts` — for 10 projekter laves 21 DB queries. Brug PocketBase `expand`. |
+| 24 | **Ingen transaction rollback** | `lib/api/client.ts` `createKey()` — hvis translations fejler, forbliver key uden translations (partial state). |
+| 25 | **GPT-4 model + priser hardcoded** | `app/api/ai/translate/route.ts:137` — model `gpt-4-turbo` og pricing er hardcoded. |
+| 26 | **`tsconfig.tsbuildinfo` i git** | 1.2MB fil checked ind — bør være i `.gitignore`. |
+
 ### Hvad er GODT
 
 - `output: "standalone"` — klar til Docker
@@ -55,6 +71,10 @@
 - Vitest test setup
 - ESLint konfigureret med `--max-warnings 0`
 - PocketBase typed client med typesafe collections
+- JWT token refresh hvert 6. time (før 7-dages PocketBase expiry)
+- API key format validation med sanitization
+- Project ownership verification på API routes
+- Admin PB client caching med race condition håndtering
 
 ---
 
@@ -80,6 +100,16 @@
 | 9 | `publint` kører ikke i CI | Eksportvalidering findes som script men er ikke i pipeline |
 | 10 | Ingen `.npmignore` | Kun `files` felt — ingen safety net |
 
+### EKSTRA Issues (fra dybdegående analyse)
+
+| # | Issue | Detalje |
+|---|-------|---------|
+| 11 | **`expo/src/storage/cache.js.d.ts`** | Manuel `.d.ts` fil i source — vil skabe konflikter med auto-genererede types. Bør slettes. |
+| 12 | **Kun 14% test coverage** | 7 test filer for 49 source filer. Mangler component tests, hook tests, integration tests. |
+| 13 | **CI bygger ikke packages** | `ci.yml` kører kun `pnpm build` for web — packages bygges aldrig i CI. |
+| 14 | **`pnpm publish` løser `workspace:*`** | pnpm v9+ konverterer automatisk — men kun hvis `pnpm publish` bruges, IKKE `npm publish`. Bør dokumenteres. |
+| 15 | **Ingen CHANGELOG filer** | Nødvendigt for npm releases og version tracking. |
+
 ### Hvad er GODT
 
 - Alle pakker har korrekte `package.json` felter (name, exports, main, module, types, files, sideEffects, keywords, license, repository)
@@ -89,6 +119,12 @@
 - Shared `tsconfig.base.json`
 - `pkgroll` som build tool
 - Test setup med vitest
+- Excellent API design: in-flight request deduplication, exponential backoff retries
+- Expo: 3 loading strategies (runtime, bundled, hybrid) — production-grade arkitektur
+- Expo: AsyncStorage cache med TTL, timeout protection, version-aware migration
+- Expo: Komplet RTL language support
+- Custom error hierarchy med korrekt prototype chain
+- Code quality score: 8/10
 
 ---
 
