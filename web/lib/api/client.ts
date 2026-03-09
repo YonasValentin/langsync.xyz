@@ -61,7 +61,7 @@ class LangSyncApiClient {
     return pb.collection(Collections.PROJECTS).create<Project>({
       ...data,
       user: userId,
-      enableAiTranslation: true,
+      enableAiTranslation: process.env.NEXT_PUBLIC_ENABLE_AI === 'true',
     });
   }
 
@@ -228,8 +228,15 @@ class LangSyncApiClient {
     return pb.collection(Collections.TRANSLATION_KEYS).delete(keyId);
   }
 
-  // AI Translation endpoints - these will call the Vercel Edge Function
+  // AI Translation endpoints (gated behind NEXT_PUBLIC_ENABLE_AI feature flag)
+  private assertAiEnabled(): void {
+    if (process.env.NEXT_PUBLIC_ENABLE_AI !== 'true') {
+      throw new Error('AI features are not enabled. Set NEXT_PUBLIC_ENABLE_AI=true to use AI translations.');
+    }
+  }
+
   async translateKey(projectId: string, keyId: string, targetLanguage: string): Promise<AiTranslation> {
+    this.assertAiEnabled();
     const response = await fetch('/api/ai/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -245,6 +252,7 @@ class LangSyncApiClient {
   }
 
   async translateBatch(projectId: string, keyIds: string[], targetLanguages: string[]): Promise<AiTranslation[]> {
+    this.assertAiEnabled();
     const response = await fetch('/api/ai/translate-batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -260,6 +268,7 @@ class LangSyncApiClient {
   }
 
   async autoTranslateMissing(projectId: string, targetLanguages: string[]): Promise<AiTranslation[]> {
+    this.assertAiEnabled();
     const response = await fetch('/api/ai/auto-translate-missing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -275,6 +284,7 @@ class LangSyncApiClient {
   }
 
   async acceptTranslation(projectId: string, aiTranslationId: string): Promise<void> {
+    this.assertAiEnabled();
     const aiTranslation = await pb.collection(Collections.AI_TRANSLATIONS).getOne<AiTranslation>(aiTranslationId);
 
     // Update the actual translation

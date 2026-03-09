@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useProject, useUpdateProject } from '@/hooks/queries';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { features } from '@/lib/feature-flags';
 
 const INDUSTRY_TYPES = [
   'Technology',
@@ -230,8 +231,8 @@ export default function ProjectSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* AI Translation Settings */}
-        <Card>
+        {/* AI Translation Settings (only shown when AI feature is enabled) */}
+        {features.ai && <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -339,7 +340,7 @@ export default function ProjectSettingsPage() {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Save Button (Mobile) */}
         <div className="sm:hidden">

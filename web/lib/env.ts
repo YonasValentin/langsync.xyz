@@ -37,8 +37,14 @@ export const env = {
     return required("POCKETBASE_ADMIN_PASSWORD");
   },
 
-  /** OpenAI API key for AI translations (server-side only) */
+  /** Whether AI translation features are enabled */
+  get isAiEnabled(): boolean {
+    return process.env.NEXT_PUBLIC_ENABLE_AI === "true";
+  },
+
+  /** OpenAI API key for AI translations (server-side only, required when AI is enabled) */
   get OPENAI_API_KEY(): string {
+    if (!this.isAiEnabled) return "";
     return required("OPENAI_API_KEY");
   },
 

@@ -68,6 +68,7 @@ import { GitHistory } from '@/components/git/git-history';
 import { GitStatusIndicator } from '@/components/git/git-status-indicator';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { apiClient } from '@/lib/api/client';
+import { features } from '@/lib/feature-flags';
 import { AISuggestionCard } from '@/components/ai/ai-suggestion-card';
 import { AutoTranslateDialog } from '@/components/ai/auto-translate-dialog';
 import { toast } from 'sonner';
@@ -671,7 +672,7 @@ export default function ProjectEditorPage() {
                 </Button>
               </>
             )}
-            {project.enableAiTranslation && (
+            {features.ai && project.enableAiTranslation && (
               <Button
                 onClick={() => setIsAutoTranslateOpen(true)}
                 variant="outline"
@@ -1160,7 +1161,7 @@ export default function ProjectEditorPage() {
                                               </div>
 
                                               {/* AI Translate button for empty cells */}
-                                              {!tk.translations[lang]?.trim() && project.enableAiTranslation && (
+                                              {!tk.translations[lang]?.trim() && features.ai && project.enableAiTranslation && (
                                                 <Button
                                                   size="sm"
                                                   variant="outline"
@@ -1368,7 +1369,7 @@ export default function ProjectEditorPage() {
                                           </div>
 
                                           {/* AI Translate button for empty cells */}
-                                          {!tk.translations[lang]?.trim() && project.enableAiTranslation && (
+                                          {!tk.translations[lang]?.trim() && features.ai && project.enableAiTranslation && (
                                             <Button
                                               size="sm"
                                               variant="outline"
@@ -1515,15 +1516,17 @@ export default function ProjectEditorPage() {
         />
       )}
 
-      {/* Auto-Translate Dialog */}
-      <AutoTranslateDialog
-        open={isAutoTranslateOpen}
-        onOpenChange={setIsAutoTranslateOpen}
-        projectLanguages={project.languages}
-        defaultLanguage={project.defaultLanguage}
-        emptyTranslationsCount={emptyTranslationsCount}
-        onConfirm={handleAutoTranslate}
-      />
+      {/* Auto-Translate Dialog (AI feature) */}
+      {features.ai && (
+        <AutoTranslateDialog
+          open={isAutoTranslateOpen}
+          onOpenChange={setIsAutoTranslateOpen}
+          projectLanguages={project.languages}
+          defaultLanguage={project.defaultLanguage}
+          emptyTranslationsCount={emptyTranslationsCount}
+          onConfirm={handleAutoTranslate}
+        />
+      )}
 
       {/* Confirm Delete Dialog */}
       <ConfirmDialog

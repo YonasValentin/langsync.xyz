@@ -5,12 +5,21 @@ import { checkRateLimit } from "@/lib/api/rate-limit";
 import { authenticateSession } from "@/lib/api/session-auth";
 import { isValidRecordId, escapeFilterValue } from "@/lib/api/sanitize";
 import { logger } from "@/lib/logger";
+import { features } from "@/lib/feature-flags";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || "unused",
 });
 
 export async function POST(request: Request) {
+  // Check if AI features are enabled
+  if (!features.ai) {
+    return NextResponse.json(
+      { error: "AI translation is not enabled. Set NEXT_PUBLIC_ENABLE_AI=true to enable." },
+      { status: 403 }
+    );
+  }
+
   // Stricter rate limit for AI endpoint (costs money)
   const rateLimited = checkRateLimit(request, { limit: 20, windowSeconds: 60 });
   if (rateLimited) return rateLimited;

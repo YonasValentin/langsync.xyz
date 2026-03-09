@@ -23,6 +23,7 @@ import {
 import { ArrowLeft, Sparkles, TrendingUp, DollarSign, Languages, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useProject, useAiUsage } from '@/hooks/queries';
+import { features } from '@/lib/feature-flags';
 import type { AiTranslationsRecord } from '@/lib/pocketbase-types';
 
 interface LanguagePairStats {
@@ -37,6 +38,12 @@ export default function AIUsagePage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
+
+  // Redirect if AI features are disabled
+  if (!features.ai) {
+    router.push(`/dashboard/projects/${projectId}`);
+    return null;
+  }
 
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
