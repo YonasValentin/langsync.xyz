@@ -173,7 +173,7 @@ export default function ProjectsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container-default py-8">
+      <main id="main-content" className="container-default py-8">
         <div className="space-y-6">
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -351,7 +351,7 @@ export default function ProjectsPage() {
                   href={`/dashboard/projects/${project.id}`}
                   onMouseEnter={() => prefetchProject(project.id)}
                 >
-                  <Card className="card-interactive h-full">
+                  <Card className="card-interactive h-full group">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -368,7 +368,7 @@ export default function ProjectsPage() {
                             e.stopPropagation();
                             handleDeleteProject(project.id, project.name);
                           }}
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
                           aria-label="Delete project"
                           disabled={deleteProject.isPending}
                         >

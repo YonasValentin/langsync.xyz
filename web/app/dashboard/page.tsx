@@ -39,7 +39,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container-default py-8">
+      <main id="main-content" className="container-default py-8">
         <div className="space-y-8">
           {/* Welcome Section */}
           <div>
