@@ -6,7 +6,7 @@ vi.mock("@/lib/api/auth-middleware", () => ({
 }));
 
 vi.mock("@/lib/api/rate-limit", () => ({
-  checkRateLimit: vi.fn().mockReturnValue(null),
+  checkRateLimit: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -33,7 +33,7 @@ function makeRequest(): Request {
 describe("v1 GET /projects/[projectId]/translations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkRateLimit).mockReturnValue(null);
+    vi.mocked(checkRateLimit).mockResolvedValue(null);
   });
 
   it("returns empty data when no keys exist", async () => {
@@ -98,7 +98,7 @@ describe("v1 GET /projects/[projectId]/translations", () => {
   });
 
   it("returns 429 when rate limited", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(
+    vi.mocked(checkRateLimit).mockResolvedValue(
       NextResponse.json({ error: "Too many requests" }, { status: 429 })
     );
 

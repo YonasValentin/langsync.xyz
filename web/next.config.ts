@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -23,11 +24,11 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+            "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.sentry.io",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://api.stripe.com",
+            "connect-src 'self' https://api.stripe.com https://*.ingest.sentry.io",
             "frame-src https://js.stripe.com",
             "object-src 'none'",
             "base-uri 'self'",
@@ -55,4 +56,11 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry is only active when DSN is configured
+  silent: !process.env.NEXT_PUBLIC_SENTRY_DSN,
+  disableLogger: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+});

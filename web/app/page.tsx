@@ -38,6 +38,12 @@ export default function HomePage() {
               Pricing
             </Link>
             <Link
+              href="/docs/api"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Docs
+            </Link>
+            <Link
               href="/compare/tolgee"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >

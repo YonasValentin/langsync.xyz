@@ -5,7 +5,7 @@ vi.mock("@/lib/pocketbase-server", () => ({
 }));
 
 vi.mock("@/lib/api/rate-limit", () => ({
-  checkRateLimit: vi.fn().mockReturnValue(null),
+  checkRateLimit: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -68,7 +68,7 @@ describe("AI translate POST", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(checkRateLimit).mockReturnValue(null);
+    vi.mocked(checkRateLimit).mockResolvedValue(null);
 
     mockPb = {
       collection: vi.fn().mockImplementation((name: string) => {
@@ -127,7 +127,7 @@ describe("AI translate POST", () => {
   });
 
   it("returns 429 when rate limited", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(
+    vi.mocked(checkRateLimit).mockResolvedValue(
       NextResponse.json({ error: "Too many requests" }, { status: 429 })
     );
 

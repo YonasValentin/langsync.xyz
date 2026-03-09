@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   // Stricter rate limit for AI endpoint (costs money)
-  const rateLimited = checkRateLimit(request, { limit: 20, windowSeconds: 60 });
+  const rateLimited = await checkRateLimit(request, { limit: 20, windowSeconds: 60 });
   if (rateLimited) return rateLimited;
 
   try {

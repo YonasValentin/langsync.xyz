@@ -326,7 +326,9 @@
                 "type": "bool"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_projects_user` ON `projects` (`user`)"
+        ],
         "system": false
     },
     {
@@ -429,7 +431,10 @@
                 "type": "text"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_translation_keys_project` ON `translation_keys` (`project`)",
+            "CREATE UNIQUE INDEX `idx_translation_keys_project_key` ON `translation_keys` (`project`, `key`)"
+        ],
         "system": false
     },
     {
@@ -531,7 +536,10 @@
                 "type": "relation"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_translations_key` ON `translations` (`translationKey`)",
+            "CREATE UNIQUE INDEX `idx_translations_key_lang` ON `translations` (`translationKey`, `language`)"
+        ],
         "system": false
     },
     {
@@ -732,7 +740,10 @@
                 "type": "bool"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_ai_translations_project` ON `ai_translations` (`project`)",
+            "CREATE INDEX `idx_ai_translations_key` ON `ai_translations` (`translationKey`)"
+        ],
         "system": false
     },
     {
@@ -880,7 +891,10 @@
                 "type": "date"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_comments_project` ON `comments` (`project`)",
+            "CREATE INDEX `idx_comments_key` ON `comments` (`translationKey`)"
+        ],
         "system": false
     },
     {
@@ -1028,7 +1042,10 @@
                 "type": "text"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_approvals_key` ON `approvals` (`translationKey`)",
+            "CREATE INDEX `idx_approvals_key_lang` ON `approvals` (`translationKey`, `language`)"
+        ],
         "system": false
     },
     {
@@ -1167,7 +1184,10 @@
                 "type": "json"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_activity_logs_project` ON `activity_logs` (`project`)",
+            "CREATE INDEX `idx_activity_logs_project_created` ON `activity_logs` (`project`, `created`)"
+        ],
         "system": false
     },
     {
@@ -1304,7 +1324,10 @@
                 "type": "json"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_translation_versions_key` ON `translation_versions` (`translationKey`)",
+            "CREATE INDEX `idx_translation_versions_key_lang` ON `translation_versions` (`translationKey`, `language`)"
+        ],
         "system": false
     },
     {
@@ -1779,7 +1802,10 @@
                 "type": "date"
             }
         ],
-        "indexes": [],
+        "indexes": [
+            "CREATE INDEX `idx_translation_memory_project` ON `translation_memory` (`project`)",
+            "CREATE INDEX `idx_translation_memory_langs` ON `translation_memory` (`sourceLanguage`, `targetLanguage`)"
+        ],
         "system": false
     }
 ]

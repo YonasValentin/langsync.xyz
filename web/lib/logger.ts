@@ -1,13 +1,19 @@
 /**
- * Simple structured logger for the application
- * Can be extended to integrate with error tracking services like Sentry
+ * Structured logger with Sentry integration.
+ *
+ * Sentry is used when NEXT_PUBLIC_SENTRY_DSN is configured.
+ * Falls back to JSON-structured console logging otherwise.
  */
+
+import * as Sentry from "@sentry/nextjs"
 
 type LogLevel = "info" | "warn" | "error"
 
 interface LogContext {
   [key: string]: unknown
 }
+
+const sentryEnabled = !!process.env.NEXT_PUBLIC_SENTRY_DSN
 
 class Logger {
   private log(level: LogLevel, message: string, context?: LogContext) {
@@ -19,18 +25,27 @@ class Logger {
       ...context,
     }
 
-    // In development, use console for better DX
     if (process.env.NODE_ENV === "development") {
       const consoleMethod = level === "error" ? console.error : level === "warn" ? console.warn : console.log
       consoleMethod(`[${level.toUpperCase()}]`, message, context || "")
-    } else {
-      // In production, log as JSON for log aggregation services
-      console.log(JSON.stringify(logData))
+      return
+    }
 
-      // TODO: Integrate with error tracking service (Sentry, LogRocket, etc.)
-      // if (level === "error") {
-      //   Sentry.captureException(new Error(message), { extra: context })
-      // }
+    // Production: structured JSON logging
+    console.log(JSON.stringify(logData))
+
+    // Report errors and warnings to Sentry
+    if (sentryEnabled) {
+      if (level === "error") {
+        Sentry.captureException(new Error(message), {
+          extra: context,
+        })
+      } else if (level === "warn") {
+        Sentry.captureMessage(message, {
+          level: "warning",
+          extra: context,
+        })
+      }
     }
   }
 

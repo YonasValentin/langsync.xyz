@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import type PocketBase from "pocketbase";
 import { getAdminPb } from "@/lib/pocketbase-server";
 import { isValidApiKey, isValidRecordId, escapeFilterValue } from "./sanitize";
+import { hashApiKey } from "./api-key-hash";
 import { logger } from "@/lib/logger";
 
 interface AuthResult {
@@ -66,11 +67,13 @@ export async function authenticateApiKey(
     );
   }
 
-  // Look up the API key in the api_keys collection
+  // Look up the API key — supports both hashed keys (preferred) and legacy plaintext
+  const keyHash = hashApiKey(apiKey);
   let keyRecords;
   try {
+    // Try hashed lookup first, then fall back to plaintext for migration
     keyRecords = await pb.collection("api_keys").getFullList({
-      filter: `key = "${escapeFilterValue(apiKey)}"`,
+      filter: `key = "${escapeFilterValue(keyHash)}" || key = "${escapeFilterValue(apiKey)}"`,
     });
   } catch (err) {
     logger.error("Failed to query api_keys", {
@@ -90,6 +93,18 @@ export async function authenticateApiKey(
   }
 
   const keyRecord = keyRecords[0];
+
+  // Auto-migrate plaintext keys to hashed on first use
+  if (keyRecord.key === apiKey && keyRecord.key !== keyHash) {
+    pb.collection("api_keys")
+      .update(keyRecord.id, { key: keyHash })
+      .catch((err) => {
+        logger.warn("Failed to migrate API key to hashed format", {
+          keyId: keyRecord.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+  }
 
   // Check if key is revoked
   if (keyRecord.revoked) {

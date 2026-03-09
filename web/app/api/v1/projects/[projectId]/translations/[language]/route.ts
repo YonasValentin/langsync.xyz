@@ -16,7 +16,7 @@ interface RouteParams {
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
-  const rateLimited = checkRateLimit(request);
+  const rateLimited = await checkRateLimit(request);
   if (rateLimited) return rateLimited;
 
   try {
