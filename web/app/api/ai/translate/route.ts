@@ -6,6 +6,7 @@ import { authenticateSession } from "@/lib/api/session-auth";
 import { isValidRecordId, escapeFilterValue } from "@/lib/api/sanitize";
 import { logger } from "@/lib/logger";
 import { features } from "@/lib/feature-flags";
+import { env } from "@/lib/env";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "unused",
@@ -132,9 +133,10 @@ Only return the translated text, nothing else.`;
       systemPrompt += `\n\nTranslation context: ${translationKey.context}`;
     }
 
-    // Call OpenAI
+    // Call OpenAI — model is configurable via OPENAI_MODEL env var
+    const model = env.OPENAI_MODEL;
     const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: sourceText },
@@ -162,7 +164,7 @@ Only return the translated text, nothing else.`;
       targetLanguage,
       sourceText,
       translatedText,
-      model: "gpt-4-turbo",
+      model,
       promptTokens,
       completionTokens,
       totalTokens,

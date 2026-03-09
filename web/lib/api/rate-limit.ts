@@ -14,6 +14,12 @@ interface RateLimitEntry {
 
 const store = new Map<string, RateLimitEntry>();
 
+/**
+ * Maximum entries in the store to prevent unbounded memory growth.
+ * If exceeded, oldest entries are evicted during pruning.
+ */
+const MAX_STORE_SIZE = 10_000;
+
 // Prune expired entries every 60 seconds to prevent memory leaks
 const PRUNE_INTERVAL = 60_000;
 let lastPrune = Date.now();
@@ -25,6 +31,15 @@ function prune() {
   for (const [key, entry] of store) {
     if (now > entry.resetAt) {
       store.delete(key);
+    }
+  }
+  // Hard cap: evict oldest entries if store is still too large
+  if (store.size > MAX_STORE_SIZE) {
+    const excess = store.size - MAX_STORE_SIZE;
+    const iterator = store.keys();
+    for (let i = 0; i < excess; i++) {
+      const key = iterator.next().value;
+      if (key) store.delete(key);
     }
   }
 }

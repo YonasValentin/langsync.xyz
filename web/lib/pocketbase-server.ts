@@ -14,6 +14,7 @@ import { logger } from "@/lib/logger";
 
 let adminPb: PocketBase | null = null;
 let authPromise: Promise<void> | null = null;
+let startupValidated = false;
 
 /**
  * Returns a PocketBase client authenticated as a superuser.
@@ -42,6 +43,10 @@ export async function getAdminPb(): Promise<PocketBase> {
     .then(() => {
       adminPb = pb;
       authPromise = null;
+      if (!startupValidated) {
+        startupValidated = true;
+        logger.info("PocketBase superuser authentication validated");
+      }
     })
     .catch((err) => {
       authPromise = null;
@@ -54,4 +59,12 @@ export async function getAdminPb(): Promise<PocketBase> {
 
   await authPromise;
   return adminPb!;
+}
+
+/**
+ * Eagerly validate PocketBase admin credentials.
+ * Call at application startup to fail fast on misconfiguration.
+ */
+export async function validateAdminAuth(): Promise<void> {
+  await getAdminPb();
 }

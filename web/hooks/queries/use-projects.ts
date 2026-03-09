@@ -67,45 +67,65 @@ async function getProjects(): Promise<ProjectWithStats[]> {
     sort: "-created",
   });
 
-  // Get stats for each project
-  const projectsWithStats = await Promise.all(
-    projects.map(async (project) => {
-      // Get key count
-      const keys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKeysRecord>({
-        filter: `project = "${escapeFilterValue(project.id)}"`,
-        fields: "id",
-      });
+  if (projects.length === 0) return [];
 
-      const keyCount = keys.length;
+  // Batch-fetch all keys for all projects in a single query (fixes N+1)
+  const projectIds = projects.map(p => p.id);
+  const projectFilter = projectIds
+    .map(id => `project = "${escapeFilterValue(id)}"`)
+    .join(" || ");
 
-      // Calculate translation progress
-      let translationProgress = 0;
-      if (keyCount > 0 && project.languages.length > 0) {
-        const totalNeeded = keyCount * project.languages.length;
+  const allKeys = await pb.collection(Collections.TRANSLATION_KEYS).getFullList<TranslationKeysRecord>({
+    filter: projectFilter,
+    fields: "id,project",
+  });
 
-        // Get translation count
-        if (keys.length > 0) {
-          const keyIds = keys.map(k => k.id);
-          const translations = await pb.collection(Collections.TRANSLATIONS).getFullList<TranslationsRecord>({
-            filter: keyIds.map(id => `translationKey = "${escapeFilterValue(id)}"`).join(" || "),
-            fields: "id,value",
-          });
+  // Group keys by project
+  const keysByProject: Record<string, TranslationKeysRecord[]> = {};
+  for (const key of allKeys) {
+    if (!keysByProject[key.project]) keysByProject[key.project] = [];
+    keysByProject[key.project].push(key);
+  }
 
-          // Count non-empty translations
-          const filledCount = translations.filter(t => t.value && t.value.trim() !== "").length;
-          translationProgress = Math.round((filledCount / totalNeeded) * 100);
-        }
+  // Batch-fetch all translations in a single query
+  let allTranslations: TranslationsRecord[] = [];
+  if (allKeys.length > 0) {
+    const allKeyIds = allKeys.map(k => k.id);
+    const translationFilter = allKeyIds
+      .map(id => `translationKey = "${escapeFilterValue(id)}"`)
+      .join(" || ");
+
+    allTranslations = await pb.collection(Collections.TRANSLATIONS).getFullList<TranslationsRecord>({
+      filter: translationFilter,
+      fields: "id,value,translationKey",
+    });
+  }
+
+  // Group translations by key
+  const translationsByKey: Record<string, TranslationsRecord[]> = {};
+  for (const t of allTranslations) {
+    if (!translationsByKey[t.translationKey]) translationsByKey[t.translationKey] = [];
+    translationsByKey[t.translationKey].push(t);
+  }
+
+  // Calculate stats for each project
+  return projects.map((project) => {
+    const keys = keysByProject[project.id] || [];
+    const keyCount = keys.length;
+
+    let translationProgress = 0;
+    if (keyCount > 0 && project.languages.length > 0) {
+      const totalNeeded = keyCount * project.languages.length;
+      let filledCount = 0;
+      for (const key of keys) {
+        const translations = translationsByKey[key.id] || [];
+        filledCount += translations.filter(t => t.value && t.value.trim() !== "").length;
       }
+      translationProgress = Math.round((filledCount / totalNeeded) * 100);
+    }
 
-      return {
-        ...project,
-        keyCount,
-        translationProgress,
-      };
-    })
-  );
-
-  return projectsWithStats;
+    return { ...project, keyCount, translationProgress };
+  });
 }
 
 async function getProject(id: string): Promise<ProjectExpanded | null> {

@@ -133,20 +133,32 @@ class LangSyncApiClient {
       context: data.context,
     });
 
-    // Create translations for each language
-    const translationPromises = Object.entries(data.translations).map(([language, value]) =>
-      pb.collection(Collections.TRANSLATIONS).create({
-        translationKey: key.id,
-        language,
-        value,
-        updatedBy: pb.authStore.model?.id,
-      })
-    );
+    // Create translations for each language — rollback key on failure
+    try {
+      const translationPromises = Object.entries(data.translations).map(([language, value]) =>
+        pb.collection(Collections.TRANSLATIONS).create({
+          translationKey: key.id,
+          language,
+          value,
+          updatedBy: pb.authStore.model?.id,
+        })
+      );
 
-    await Promise.all(translationPromises);
+      await Promise.all(translationPromises);
+    } catch (err) {
+      // Rollback: delete the key we just created since translations failed
+      try {
+        await pb.collection(Collections.TRANSLATION_KEYS).delete(key.id);
+      } catch {
+        // Best effort rollback — key may be orphaned
+      }
+      throw new Error(
+        `Failed to create translations for key "${data.key}": ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
 
-    // Log activity
-    await this.logActivity(projectId, 'key_created', key.id, undefined, `Created key: ${data.key}`);
+    // Log activity (best-effort, don't fail the operation)
+    this.logActivity(projectId, 'key_created', key.id, undefined, `Created key: ${data.key}`).catch(() => {});
 
     return key;
   }

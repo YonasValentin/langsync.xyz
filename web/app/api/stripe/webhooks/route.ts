@@ -88,6 +88,22 @@ export async function POST(request: Request) {
     );
   }
 
+  // Idempotency: skip events we've already processed.
+  // Stripe may retry deliveries; upsertSubscription is itself idempotent
+  // (update-or-create), but we still guard against double-processing to
+  // avoid redundant work and ensure correctness.
+  const pb = await getAdminPb();
+  try {
+    const existing = await pb
+      .collection("webhook_events")
+      .getFirstListItem(`stripeEventId = "${escapeFilterValue(event.id)}"`);
+    if (existing) {
+      return NextResponse.json({ received: true });
+    }
+  } catch {
+    // Not found — continue processing
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -209,6 +225,22 @@ export async function POST(request: Request) {
       { error: "Webhook processing failed" },
       { status: 500 }
     );
+  }
+
+  // Record successful processing for idempotency
+  try {
+    await pb.collection("webhook_events").create({
+      stripeEventId: event.id,
+      eventType: event.type,
+      processedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Non-fatal: event was processed, just couldn't record it.
+    // Next retry will re-process but upsertSubscription is idempotent.
+    logger.warn("Failed to record webhook event for idempotency", {
+      eventId: event.id,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   return NextResponse.json({ received: true });

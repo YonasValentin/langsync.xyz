@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getAdminPb } from "@/lib/pocketbase-server";
 import { authenticateSession } from "@/lib/api/session-auth";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { escapeFilterValue } from "@/lib/api/sanitize";
 
@@ -36,12 +37,11 @@ export async function POST(request: Request) {
     }
 
     const stripe = getStripe();
-    const origin =
-      request.headers.get("origin") || "http://localhost:3000";
+    const appUrl = env.APP_URL;
 
     const session = await stripe.billingPortal.sessions.create({
       customer: subs[0].stripeCustomerId,
-      return_url: `${origin}/dashboard/billing`,
+      return_url: `${appUrl}/dashboard/billing`,
     });
 
     return NextResponse.json({ url: session.url });

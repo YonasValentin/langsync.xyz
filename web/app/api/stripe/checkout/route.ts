@@ -75,16 +75,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const origin =
-      request.headers.get("origin") || "http://localhost:3000";
+    const appUrl = env.APP_URL;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/dashboard/billing?success=true`,
-      cancel_url: `${origin}/dashboard/billing?canceled=true`,
+      success_url: `${appUrl}/dashboard/billing?success=true`,
+      cancel_url: `${appUrl}/dashboard/billing?canceled=true`,
       metadata: {
         userId,
         plan,
